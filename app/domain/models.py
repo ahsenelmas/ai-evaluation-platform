@@ -90,3 +90,19 @@ class CaseEvaluationReport(BaseModel):
     results: list[EvaluationResult] = Field(
         default_factory=list,
     )
+
+class DatasetManifestEntry(BaseModel):
+    id: str = Field(min_length=1)
+    system: str = Field(min_length=1)
+    version: str = Field(min_length=1)
+    file_path: str = Field(min_length=1)
+
+    description: str = ""
+    released: bool = False
+    checksum_sha256: str | None = None
+    case_count: int = Field(ge=0)
+
+
+class EvaluationDataset(BaseModel):
+    metadata: DatasetManifestEntry
+    cases: list[EvaluationCase]
