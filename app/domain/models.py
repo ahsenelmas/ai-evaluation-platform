@@ -72,3 +72,21 @@ class EvaluationResult(BaseModel):
     reason: str
 
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+class CaseEvaluationReport(BaseModel):
+    case_id: str
+    system: str
+
+    passed: bool
+    aggregate_score: float = Field(
+        ge=0.0,
+        le=1.0,
+    )
+
+    evaluator_count: int = Field(ge=0)
+    passed_count: int = Field(ge=0)
+    failed_count: int = Field(ge=0)
+
+    results: list[EvaluationResult] = Field(
+        default_factory=list,
+    )
