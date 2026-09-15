@@ -5,6 +5,12 @@ from app.evaluators.base import Evaluator
 from app.evaluators.deterministic.exact_match import (
     ExactMatchEvaluator,
 )
+from app.evaluators.deterministic.latency import (
+    LatencyEvaluator,
+)
+from app.evaluators.deterministic.required_fields import (
+    RequiredFieldsEvaluator,
+)
 
 EvaluatorFactory = Callable[
     [dict[str, Any]],
@@ -90,12 +96,69 @@ def create_exact_match_evaluator(
     )
 
 
+def create_required_fields_evaluator(
+    settings: dict[str, Any],
+) -> Evaluator:
+    required_fields = settings.get(
+        "required_fields"
+    )
+
+    if not isinstance(required_fields, list):
+        raise ValueError(
+            "The required_fields evaluator requires "
+            "a 'required_fields' list."
+        )
+
+    if not all(
+        isinstance(field, str)
+        for field in required_fields
+    ):
+        raise ValueError(
+            "Every required field must be a string."
+        )
+
+    return RequiredFieldsEvaluator(
+        required_fields=required_fields,
+    )
+
+
+def create_latency_evaluator(
+    settings: dict[str, Any],
+) -> Evaluator:
+    max_latency_ms = settings.get(
+        "max_latency_ms"
+    )
+
+    if (
+        not isinstance(max_latency_ms, int)
+        or isinstance(max_latency_ms, bool)
+    ):
+        raise ValueError(
+            "The latency evaluator requires an integer "
+            "'max_latency_ms' setting."
+        )
+
+    return LatencyEvaluator(
+        max_latency_ms=max_latency_ms,
+    )
+
+
 def build_default_registry() -> EvaluatorRegistry:
     registry = EvaluatorRegistry()
 
     registry.register(
         "exact_match",
         create_exact_match_evaluator,
+    )
+
+    registry.register(
+        "required_fields",
+        create_required_fields_evaluator,
+    )
+
+    registry.register(
+        "latency",
+        create_latency_evaluator,
     )
 
     return registry
