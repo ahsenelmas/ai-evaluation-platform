@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from app.domain.models import (
     ApplicationExecution,
+    CaseEvaluationReport,
     EvaluationCase,
 )
 
@@ -16,7 +17,9 @@ class EvaluatorRequest(BaseModel):
 
     settings: dict[str, Any] = Field(
         default_factory=dict,
-        description="Evaluator-specific configuration.",
+        description=(
+            "Evaluator-specific configuration."
+        ),
     )
 
 
@@ -26,5 +29,24 @@ class RunEvaluationRequest(BaseModel):
 
     evaluators: list[EvaluatorRequest] = Field(
         min_length=1,
-        description="Evaluators executed for this case.",
+        description=(
+            "Evaluators executed for this case."
+        ),
     )
+
+
+class ExecuteEvaluationRequest(BaseModel):
+    case: EvaluationCase
+
+    evaluators: list[EvaluatorRequest] = Field(
+        min_length=1,
+        description=(
+            "Evaluators executed after the "
+            "application responds."
+        ),
+    )
+
+
+class ExecuteEvaluationResponse(BaseModel):
+    execution: ApplicationExecution
+    evaluation: CaseEvaluationReport

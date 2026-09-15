@@ -23,6 +23,7 @@ class Settings(BaseSettings):
 
     ata_rag_base_url: str = "http://127.0.0.1:8001"
     internship_coordinator_base_url: str = "http://127.0.0.1:8002"
+    internship_coordinator_api_key: str | None = None
 
     cors_origins: str = (
         "http://localhost:3000,"
