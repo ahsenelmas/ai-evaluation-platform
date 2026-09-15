@@ -11,6 +11,10 @@ from app.evaluators.deterministic.latency import (
 from app.evaluators.deterministic.required_fields import (
     RequiredFieldsEvaluator,
 )
+from app.evaluators.deterministic.retrieval import (
+    RetrievalPrecisionEvaluator,
+    RetrievalRecallEvaluator,
+)
 
 EvaluatorFactory = Callable[
     [dict[str, Any]],
@@ -142,6 +146,102 @@ def create_latency_evaluator(
         max_latency_ms=max_latency_ms,
     )
 
+def parse_retrieval_settings(
+    settings: dict[str, Any],
+) -> tuple[int, float, str, str]:
+    k = settings.get("k", 5)
+
+    minimum_score = settings.get(
+        "minimum_score",
+        0.0,
+    )
+
+    expected_field = settings.get(
+        "expected_field",
+        "expected_source_ids",
+    )
+
+    source_id_field = settings.get(
+        "source_id_field",
+        "url",
+    )
+
+    if (
+        not isinstance(k, int)
+        or isinstance(k, bool)
+        or k <= 0
+    ):
+        raise ValueError(
+            "Retrieval evaluator requires a "
+            "positive integer 'k'."
+        )
+
+    if (
+        not isinstance(
+            minimum_score,
+            (int, float),
+        )
+        or isinstance(minimum_score, bool)
+        or not 0.0
+        <= float(minimum_score)
+        <= 1.0
+    ):
+        raise ValueError(
+            "'minimum_score' must be between 0 and 1."
+        )
+
+    if not isinstance(expected_field, str):
+        raise ValueError(
+            "'expected_field' must be a string."
+        )
+
+    if not isinstance(source_id_field, str):
+        raise ValueError(
+            "'source_id_field' must be a string."
+        )
+
+    return (
+        k,
+        float(minimum_score),
+        expected_field,
+        source_id_field,
+    )
+
+
+def create_retrieval_recall_evaluator(
+    settings: dict[str, Any],
+) -> Evaluator:
+    (
+        k,
+        minimum_score,
+        expected_field,
+        source_id_field,
+    ) = parse_retrieval_settings(settings)
+
+    return RetrievalRecallEvaluator(
+        k=k,
+        minimum_score=minimum_score,
+        expected_field=expected_field,
+        source_id_field=source_id_field,
+    )
+
+
+def create_retrieval_precision_evaluator(
+    settings: dict[str, Any],
+) -> Evaluator:
+    (
+        k,
+        minimum_score,
+        expected_field,
+        source_id_field,
+    ) = parse_retrieval_settings(settings)
+
+    return RetrievalPrecisionEvaluator(
+        k=k,
+        minimum_score=minimum_score,
+        expected_field=expected_field,
+        source_id_field=source_id_field,
+    )
 
 def build_default_registry() -> EvaluatorRegistry:
     registry = EvaluatorRegistry()
@@ -159,6 +259,16 @@ def build_default_registry() -> EvaluatorRegistry:
     registry.register(
         "latency",
         create_latency_evaluator,
+    )
+
+    registry.register(
+        "retrieval_recall",
+        create_retrieval_recall_evaluator,
+    )
+
+    registry.register(
+        "retrieval_precision",
+        create_retrieval_precision_evaluator,
     )
 
     return registry
