@@ -1,4 +1,5 @@
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 from app.domain.models import (
     ApplicationExecution,
@@ -8,20 +9,79 @@ from app.domain.models import (
 from app.evaluators.base import Evaluator
 
 
+def normalize_source_id(source_id: str) -> str:
+    value = source_id.strip()
+
+    if not value:
+        return value
+
+    parsed = urlsplit(value)
+
+    if (
+        parsed.scheme.lower() not in {"http", "https"}
+        or not parsed.netloc
+    ):
+        return value
+
+    scheme = parsed.scheme.lower()
+    netloc = parsed.netloc.lower()
+
+    if scheme == "http" and netloc.endswith(":80"):
+        netloc = netloc[:-3]
+
+    if scheme == "https" and netloc.endswith(":443"):
+        netloc = netloc[:-4]
+
+    path = parsed.path.rstrip("/")
+
+    return urlunsplit(
+        (
+            scheme,
+            netloc,
+            path,
+            "",
+            "",
+        )
+    )
+
+
+def deduplicate_source_ids(
+    source_ids: list[str],
+) -> list[str]:
+    unique_ids: list[str] = []
+    normalized_ids: set[str] = set()
+
+    for source_id in source_ids:
+        normalized_id = normalize_source_id(source_id)
+
+        if not normalized_id:
+            continue
+
+        if normalized_id in normalized_ids:
+            continue
+
+        normalized_ids.add(normalized_id)
+        unique_ids.append(source_id.strip())
+
+    return unique_ids
+
+
 class RetrievalEvaluator(Evaluator):
     def __init__(
         self,
         *,
         k: int = 5,
-        minimum_score: float = 0.0,
-        expected_field: str = ("expected_source_ids"),
+        minimum_score: float = 1.0,
+        expected_field: str = "expected_source_ids",
         source_id_field: str = "url",
     ) -> None:
         if k <= 0:
             raise ValueError("Retrieval K must be greater than zero.")
 
         if not 0.0 <= minimum_score <= 1.0:
-            raise ValueError("Minimum score must be between 0 and 1.")
+            raise ValueError(
+                "Minimum score must be between 0 and 1."
+            )
 
         self.k = k
         self.minimum_score = minimum_score
@@ -38,39 +98,46 @@ class RetrievalEvaluator(Evaluator):
         )
 
         if not isinstance(raw_ids, list):
-            raise ValueError(f"'{self.expected_field}' must be a list.")
+            raise ValueError(
+                f"'{self.expected_field}' must be a list."
+            )
 
-        if not all(isinstance(item, str) for item in raw_ids):
-            raise ValueError("Every expected source ID must be a string.")
+        if not all(
+            isinstance(item, str)
+            for item in raw_ids
+        ):
+            raise ValueError(
+                "Every expected source ID must be a string."
+            )
 
-        return list(dict.fromkeys(item.strip() for item in raw_ids if item.strip()))
+        return deduplicate_source_ids(raw_ids)
 
     def get_retrieved_ids(
         self,
         execution: ApplicationExecution,
     ) -> list[str]:
-        retrieved_ids: list[str] = []
+        raw_ids: list[str] = []
 
         for source in execution.retrieved_context:
             if not isinstance(source, dict):
                 continue
 
-            source_id: Any = source.get(self.source_id_field)
+            source_id: Any = source.get(
+                self.source_id_field
+            )
 
             if not isinstance(source_id, str):
                 continue
 
-            source_id = source_id.strip()
+            if source_id.strip():
+                raw_ids.append(source_id)
 
-            if source_id and source_id not in retrieved_ids:
-                retrieved_ids.append(source_id)
-
-        return retrieved_ids[: self.k]
+        return deduplicate_source_ids(raw_ids)[: self.k]
 
 
 class RetrievalRecallEvaluator(RetrievalEvaluator):
     name = "retrieval_recall"
-    version = "1.0.0"
+    version = "1.1.0"
 
     async def evaluate(
         self,
@@ -79,8 +146,9 @@ class RetrievalRecallEvaluator(RetrievalEvaluator):
     ) -> EvaluationResult:
         try:
             expected_ids = self.get_expected_ids(case)
-
-            retrieved_ids = self.get_retrieved_ids(execution)
+            retrieved_ids = self.get_retrieved_ids(
+                execution
+            )
 
         except ValueError as error:
             return EvaluationResult(
@@ -95,14 +163,36 @@ class RetrievalRecallEvaluator(RetrievalEvaluator):
                 },
             )
 
-        expected_set = set(expected_ids)
-        retrieved_set = set(retrieved_ids)
+        normalized_expected_ids = [
+            normalize_source_id(source_id)
+            for source_id in expected_ids
+        ]
+        normalized_retrieved_ids = [
+            normalize_source_id(source_id)
+            for source_id in retrieved_ids
+        ]
 
-        matched_ids = sorted(expected_set & retrieved_set)
+        retrieved_set = set(normalized_retrieved_ids)
 
-        missing_ids = sorted(expected_set - retrieved_set)
+        matched_ids = [
+            source_id
+            for source_id in expected_ids
+            if normalize_source_id(source_id)
+            in retrieved_set
+        ]
 
-        score = len(matched_ids) / len(expected_set) if expected_set else 1.0
+        missing_ids = [
+            source_id
+            for source_id in expected_ids
+            if normalize_source_id(source_id)
+            not in retrieved_set
+        ]
+
+        score = (
+            len(matched_ids) / len(expected_ids)
+            if expected_ids
+            else 1.0
+        )
 
         passed = score >= self.minimum_score
 
@@ -114,7 +204,7 @@ class RetrievalRecallEvaluator(RetrievalEvaluator):
             passed=passed,
             reason=(
                 f"Retrieved {len(matched_ids)} of "
-                f"{len(expected_set)} expected sources "
+                f"{len(expected_ids)} expected sources "
                 f"within the top {self.k} results."
             ),
             metadata={
@@ -122,6 +212,12 @@ class RetrievalRecallEvaluator(RetrievalEvaluator):
                 "minimum_score": self.minimum_score,
                 "expected_ids": expected_ids,
                 "retrieved_ids": retrieved_ids,
+                "normalized_expected_ids": (
+                    normalized_expected_ids
+                ),
+                "normalized_retrieved_ids": (
+                    normalized_retrieved_ids
+                ),
                 "matched_ids": matched_ids,
                 "missing_ids": missing_ids,
             },
@@ -130,7 +226,7 @@ class RetrievalRecallEvaluator(RetrievalEvaluator):
 
 class RetrievalPrecisionEvaluator(RetrievalEvaluator):
     name = "retrieval_precision"
-    version = "1.0.0"
+    version = "1.1.0"
 
     async def evaluate(
         self,
@@ -139,8 +235,9 @@ class RetrievalPrecisionEvaluator(RetrievalEvaluator):
     ) -> EvaluationResult:
         try:
             expected_ids = self.get_expected_ids(case)
-
-            retrieved_ids = self.get_retrieved_ids(execution)
+            retrieved_ids = self.get_retrieved_ids(
+                execution
+            )
 
         except ValueError as error:
             return EvaluationResult(
@@ -155,15 +252,35 @@ class RetrievalPrecisionEvaluator(RetrievalEvaluator):
                 },
             )
 
-        expected_set = set(expected_ids)
-        retrieved_set = set(retrieved_ids)
+        normalized_expected_ids = [
+            normalize_source_id(source_id)
+            for source_id in expected_ids
+        ]
+        normalized_retrieved_ids = [
+            normalize_source_id(source_id)
+            for source_id in retrieved_ids
+        ]
 
-        matched_ids = sorted(expected_set & retrieved_set)
+        expected_set = set(normalized_expected_ids)
 
-        irrelevant_ids = sorted(retrieved_set - expected_set)
+        matched_ids = [
+            source_id
+            for source_id in retrieved_ids
+            if normalize_source_id(source_id)
+            in expected_set
+        ]
+
+        irrelevant_ids = [
+            source_id
+            for source_id in retrieved_ids
+            if normalize_source_id(source_id)
+            not in expected_set
+        ]
 
         if retrieved_ids:
-            score = len(matched_ids) / len(retrieved_ids)
+            score = len(matched_ids) / len(
+                retrieved_ids
+            )
         else:
             score = 1.0 if not expected_ids else 0.0
 
@@ -185,6 +302,12 @@ class RetrievalPrecisionEvaluator(RetrievalEvaluator):
                 "minimum_score": self.minimum_score,
                 "expected_ids": expected_ids,
                 "retrieved_ids": retrieved_ids,
+                "normalized_expected_ids": (
+                    normalized_expected_ids
+                ),
+                "normalized_retrieved_ids": (
+                    normalized_retrieved_ids
+                ),
                 "matched_ids": matched_ids,
                 "irrelevant_ids": irrelevant_ids,
             },

@@ -92,17 +92,39 @@ def create_required_fields_evaluator(
     settings: dict[str, Any],
 ) -> Evaluator:
     required_fields = settings.get("required_fields")
+    allow_empty_fields = settings.get(
+        "allow_empty_fields",
+        [],
+    )
 
     if not isinstance(required_fields, list):
         raise ValueError(
-            "The required_fields evaluator requires a 'required_fields' list."
+            "The required_fields evaluator requires a "
+            "'required_fields' list."
         )
 
-    if not all(isinstance(field, str) for field in required_fields):
+    if not all(
+        isinstance(field, str)
+        for field in required_fields
+    ):
         raise ValueError("Every required field must be a string.")
+
+    if not isinstance(allow_empty_fields, list):
+        raise ValueError(
+            "'allow_empty_fields' must be a list."
+        )
+
+    if not all(
+        isinstance(field, str)
+        for field in allow_empty_fields
+    ):
+        raise ValueError(
+            "Every field allowed to be empty must be a string."
+        )
 
     return RequiredFieldsEvaluator(
         required_fields=required_fields,
+        allow_empty_fields=allow_empty_fields,
     )
 
 
@@ -128,7 +150,7 @@ def parse_retrieval_settings(
 
     minimum_score = settings.get(
         "minimum_score",
-        0.0,
+        1.0,
     )
 
     expected_field = settings.get(

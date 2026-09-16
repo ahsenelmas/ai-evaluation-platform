@@ -7,6 +7,7 @@ from app.domain.models import (
 from app.evaluators.deterministic.retrieval import (
     RetrievalPrecisionEvaluator,
     RetrievalRecallEvaluator,
+    normalize_source_id,
 )
 
 
@@ -14,7 +15,9 @@ def create_case() -> EvaluationCase:
     return EvaluationCase(
         id="ata-001",
         system="ata-rag",
-        input={"question": "What programmes are offered?"},
+        input={
+            "question": "What programmes are offered?"
+        },
         expected_output={
             "expected_source_ids": [
                 "https://ata.test/programmes",
@@ -37,6 +40,17 @@ def create_execution() -> ApplicationExecution:
     )
 
 
+def test_normalize_source_id() -> None:
+    normalized = normalize_source_id(
+        "HTTPS://ATA.TEST/programmes/"
+        "?tracking=test#section"
+    )
+
+    assert normalized == (
+        "https://ata.test/programmes"
+    )
+
+
 @pytest.mark.asyncio
 async def test_recall_at_k_passes() -> None:
     evaluator = RetrievalRecallEvaluator(
@@ -55,6 +69,41 @@ async def test_recall_at_k_passes() -> None:
 
 
 @pytest.mark.asyncio
+async def test_recall_normalizes_urls() -> None:
+    execution = ApplicationExecution(
+        case_id="ata-001",
+        system="ata-rag",
+        output={},
+        retrieved_context=[
+            {
+                "url": (
+                    "HTTPS://ATA.TEST/programmes/"
+                    "?tracking=test#section"
+                )
+            },
+            {
+                "url": (
+                    "https://ata.test/admissions/"
+                )
+            },
+        ],
+    )
+
+    evaluator = RetrievalRecallEvaluator(
+        k=2,
+        minimum_score=1.0,
+    )
+
+    result = await evaluator.evaluate(
+        create_case(),
+        execution,
+    )
+
+    assert result.passed is True
+    assert result.score == 1.0
+
+
+@pytest.mark.asyncio
 async def test_recall_at_k_detects_missing_source() -> None:
     evaluator = RetrievalRecallEvaluator(
         k=2,
@@ -68,7 +117,23 @@ async def test_recall_at_k_detects_missing_source() -> None:
 
     assert result.passed is False
     assert result.score == 0.5
-    assert result.metadata["missing_ids"] == ["https://ata.test/admissions"]
+    assert result.metadata["missing_ids"] == [
+        "https://ata.test/admissions"
+    ]
+
+
+@pytest.mark.asyncio
+async def test_recall_default_threshold_rejects_partial_match() -> None:
+    evaluator = RetrievalRecallEvaluator(k=2)
+
+    result = await evaluator.evaluate(
+        create_case(),
+        create_execution(),
+    )
+
+    assert result.score == 0.5
+    assert result.passed is False
+    assert result.metadata["minimum_score"] == 1.0
 
 
 @pytest.mark.asyncio
@@ -85,7 +150,9 @@ async def test_precision_at_k_calculates_score() -> None:
 
     assert result.passed is True
     assert result.score == 0.6667
-    assert result.metadata["irrelevant_ids"] == ["https://ata.test/tuition"]
+    assert result.metadata["irrelevant_ids"] == [
+        "https://ata.test/tuition"
+    ]
 
 
 @pytest.mark.asyncio
@@ -94,7 +161,9 @@ async def test_precision_fails_when_no_source_is_relevant() -> None:
         case_id="ata-001",
         system="ata-rag",
         output={},
-        retrieved_context=[{"url": "https://ata.test/unrelated"}],
+        retrieved_context=[
+            {"url": "https://ata.test/unrelated"}
+        ],
     )
 
     evaluator = RetrievalPrecisionEvaluator(
@@ -111,9 +180,50 @@ async def test_precision_fails_when_no_source_is_relevant() -> None:
     assert result.score == 0.0
 
 
+@pytest.mark.asyncio
+async def test_empty_expected_and_retrieved_sources_pass() -> None:
+    case = EvaluationCase(
+        id="ata-unsupported",
+        system="ata-rag",
+        input={
+            "question": "Who won yesterday?"
+        },
+        expected_output={
+            "expected_source_ids": []
+        },
+    )
+
+    execution = ApplicationExecution(
+        case_id="ata-unsupported",
+        system="ata-rag",
+        output={},
+        retrieved_context=[],
+    )
+
+    evaluator = RetrievalRecallEvaluator()
+
+    result = await evaluator.evaluate(
+        case,
+        execution,
+    )
+
+    assert result.passed is True
+    assert result.score == 1.0
+
+
 def test_retrieval_evaluator_rejects_invalid_k() -> None:
     with pytest.raises(
         ValueError,
         match="greater than zero",
     ):
         RetrievalRecallEvaluator(k=0)
+
+
+def test_retrieval_evaluator_rejects_invalid_score() -> None:
+    with pytest.raises(
+        ValueError,
+        match="between 0 and 1",
+    ):
+        RetrievalRecallEvaluator(
+            minimum_score=1.5
+        )
