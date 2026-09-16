@@ -9,12 +9,14 @@ from app.api.routes.experiments import (
     get_adapter_registry,
     get_dataset_service,
     get_experiment_repository,
+    get_langfuse_publisher,
 )
 from app.domain.models import (
     ApplicationExecution,
     DatasetManifestEntry,
     EvaluationCase,
     EvaluationDataset,
+    ExperimentReport,
     TokenUsage,
 )
 from app.main import app
@@ -53,6 +55,18 @@ class FakeExperimentAdapter(ApplicationAdapter):
         )
 
 
+class FakeLangfusePublisher:
+    def __init__(self) -> None:
+        self.published_reports: list[ExperimentReport] = []
+
+    def publish(
+        self,
+        report: ExperimentReport,
+    ) -> bool:
+        self.published_reports.append(report)
+        return True
+
+
 class FakeDatasetService:
     def get_dataset(
         self,
@@ -88,14 +102,19 @@ class FakeDatasetService:
         )
 
 
-def override_dataset_service():
+def override_dataset_service() -> FakeDatasetService:
     return FakeDatasetService()
 
 
-def override_adapter_registry():
+def override_adapter_registry() -> AdapterRegistry:
     registry = AdapterRegistry()
+
     registry.register(FakeExperimentAdapter())
+
     return registry
+
+
+client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
@@ -104,18 +123,19 @@ def dependency_overrides(
 ):
     repository = FileExperimentRepository(storage_root=tmp_path)
 
+    publisher = FakeLangfusePublisher()
+
     app.dependency_overrides[get_dataset_service] = override_dataset_service
 
     app.dependency_overrides[get_adapter_registry] = override_adapter_registry
 
     app.dependency_overrides[get_experiment_repository] = lambda: repository
 
-    yield
+    app.dependency_overrides[get_langfuse_publisher] = lambda: publisher
+
+    yield publisher
 
     app.dependency_overrides.clear()
-
-
-client = TestClient(app)
 
 
 def test_run_experiment_returns_report():
@@ -139,7 +159,7 @@ def test_run_experiment_returns_report():
 
     assert body["name"] == "API experiment"
     assert body["system"] == "demo-system"
-    assert body["dataset_id"] == "demo-dataset"
+    assert body["dataset_id"] == ("demo-dataset")
     assert body["dataset_version"] == "1.0.0"
 
     assert body["passed"] is True
@@ -159,6 +179,11 @@ def test_run_experiment_returns_report():
     assert body["total_cost_usd"] == 0.004
     assert len(body["cases"]) == 2
 
+    first_case = body["cases"][0]
+
+    assert first_case["input"] == {"answer": "Paris"}
+    assert first_case["expected_output"] == {"answer": "Paris"}
+
 
 def test_run_experiment_returns_404_for_missing_dataset():
     response = client.post(
@@ -176,6 +201,7 @@ def test_run_experiment_returns_404_for_missing_dataset():
     )
 
     assert response.status_code == 404
+
     assert response.json()["detail"] == ("Dataset 'missing-dataset' was not found.")
 
 
@@ -195,6 +221,7 @@ def test_run_experiment_rejects_unknown_evaluator():
     )
 
     assert response.status_code == 422
+
     assert "Unknown evaluator" in (response.json()["detail"])
 
 
@@ -232,6 +259,9 @@ def test_list_experiments_returns_saved_reports():
 
 def test_get_experiment_returns_saved_report():
     run_response = run_test_experiment()
+
+    assert run_response.status_code == 200
+
     experiment_id = run_response.json()["experiment_id"]
 
     response = client.get(f"/api/v1/experiments/{experiment_id}")
@@ -245,4 +275,35 @@ def test_get_experiment_returns_404_when_missing():
     response = client.get("/api/v1/experiments/exp-missing")
 
     assert response.status_code == 404
+
     assert response.json()["detail"] == ("Experiment 'exp-missing' was not found.")
+
+
+def test_run_experiment_publishes_to_langfuse(
+    dependency_overrides,
+):
+    publisher = dependency_overrides
+
+    response = client.post(
+        "/api/v1/experiments/run",
+        json={
+            "name": "Langfuse API test",
+            "dataset_id": "demo-dataset",
+            "evaluators": [
+                {
+                    "name": "exact_match",
+                    "settings": {"field_name": "answer"},
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+
+    assert len(publisher.published_reports) == 1
+
+    published_report = publisher.published_reports[0]
+
+    assert published_report.experiment_id == (response.json()["experiment_id"])
+
+    assert published_report.name == ("Langfuse API test")

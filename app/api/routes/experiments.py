@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     Depends,
     HTTPException,
     status,
@@ -32,6 +33,9 @@ from app.services.dataset_service import (
     DatasetNotFoundError,
     DatasetService,
 )
+from app.integrations.langfuse_client import (
+    LangfuseExperimentPublisher,
+)
 
 router = APIRouter(
     prefix="/experiments",
@@ -44,6 +48,13 @@ def get_experiment_repository() -> FileExperimentRepository:
     settings = get_settings()
 
     return FileExperimentRepository(storage_root=(settings.experiment_storage_root))
+
+@lru_cache
+def get_langfuse_publisher(
+) -> LangfuseExperimentPublisher:
+    return LangfuseExperimentPublisher.from_settings(
+        get_settings()
+    )
 
 
 @router.get(
@@ -99,6 +110,7 @@ def get_experiment(
 )
 async def run_experiment(
     payload: RunExperimentRequest,
+    background_tasks: BackgroundTasks,
     dataset_service: Annotated[
         DatasetService,
         Depends(get_dataset_service),
@@ -110,6 +122,10 @@ async def run_experiment(
     repository: Annotated[
         FileExperimentRepository,
         Depends(get_experiment_repository),
+    ],
+    langfuse_publisher: Annotated[
+        LangfuseExperimentPublisher,
+        Depends(get_langfuse_publisher),
     ],
 ) -> ExperimentReport:
     try:
@@ -129,7 +145,14 @@ async def run_experiment(
             dataset=dataset,
         )
 
-        return repository.save(report)
+        saved_report = repository.save(report)
+
+        background_tasks.add_task(
+            langfuse_publisher.publish,
+            saved_report,
+        )
+
+        return saved_report
 
     except DatasetNotFoundError as error:
         raise HTTPException(
