@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     internship_coordinator_base_url: str = "http://127.0.0.1:8002"
     internship_coordinator_api_key: str | None = None
 
+    experiment_storage_root: str = "data/experiments"
+
     cors_origins: str = (
         "http://localhost:3000,"
         "http://127.0.0.1:3000,"

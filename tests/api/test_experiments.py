@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -6,6 +8,7 @@ from app.adapters.registry import AdapterRegistry
 from app.api.routes.experiments import (
     get_adapter_registry,
     get_dataset_service,
+    get_experiment_repository,
 )
 from app.domain.models import (
     ApplicationExecution,
@@ -15,6 +18,9 @@ from app.domain.models import (
     TokenUsage,
 )
 from app.main import app
+from app.repositories.experiment_repository import (
+    FileExperimentRepository,
+)
 from app.services.dataset_service import (
     DatasetNotFoundError,
 )
@@ -93,10 +99,16 @@ def override_adapter_registry():
 
 
 @pytest.fixture(autouse=True)
-def dependency_overrides():
+def dependency_overrides(
+    tmp_path: Path,
+):
+    repository = FileExperimentRepository(storage_root=tmp_path)
+
     app.dependency_overrides[get_dataset_service] = override_dataset_service
 
     app.dependency_overrides[get_adapter_registry] = override_adapter_registry
+
+    app.dependency_overrides[get_experiment_repository] = lambda: repository
 
     yield
 
@@ -184,3 +196,53 @@ def test_run_experiment_rejects_unknown_evaluator():
 
     assert response.status_code == 422
     assert "Unknown evaluator" in (response.json()["detail"])
+
+
+def run_test_experiment():
+    return client.post(
+        "/api/v1/experiments/run",
+        json={
+            "name": "Stored experiment",
+            "dataset_id": "demo-dataset",
+            "evaluators": [
+                {
+                    "name": "exact_match",
+                    "settings": {"field_name": "answer"},
+                }
+            ],
+        },
+    )
+
+
+def test_list_experiments_returns_saved_reports():
+    run_response = run_test_experiment()
+
+    assert run_response.status_code == 200
+
+    response = client.get("/api/v1/experiments")
+
+    assert response.status_code == 200
+
+    reports = response.json()
+
+    assert len(reports) == 1
+    assert reports[0]["name"] == ("Stored experiment")
+    assert reports[0]["passed"] is True
+
+
+def test_get_experiment_returns_saved_report():
+    run_response = run_test_experiment()
+    experiment_id = run_response.json()["experiment_id"]
+
+    response = client.get(f"/api/v1/experiments/{experiment_id}")
+
+    assert response.status_code == 200
+    assert response.json()["experiment_id"] == experiment_id
+    assert response.json()["total_cases"] == 2
+
+
+def test_get_experiment_returns_404_when_missing():
+    response = client.get("/api/v1/experiments/exp-missing")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == ("Experiment 'exp-missing' was not found.")
