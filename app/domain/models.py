@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -73,6 +74,7 @@ class EvaluationResult(BaseModel):
 
     metadata: dict[str, Any] = Field(default_factory=dict)
 
+
 class CaseEvaluationReport(BaseModel):
     case_id: str
     system: str
@@ -91,6 +93,7 @@ class CaseEvaluationReport(BaseModel):
         default_factory=list,
     )
 
+
 class DatasetManifestEntry(BaseModel):
     id: str = Field(min_length=1)
     system: str = Field(min_length=1)
@@ -106,3 +109,46 @@ class DatasetManifestEntry(BaseModel):
 class EvaluationDataset(BaseModel):
     metadata: DatasetManifestEntry
     cases: list[EvaluationCase]
+
+
+class ExperimentCaseResult(BaseModel):
+    """Execution and evaluation results for one dataset case."""
+
+    case_id: str
+    passed: bool
+    execution: ApplicationExecution
+    evaluation: CaseEvaluationReport
+
+
+class ExperimentReport(BaseModel):
+    """Aggregated result of evaluating an application against a dataset."""
+
+    experiment_id: str
+    name: str
+    system: str
+
+    dataset_id: str
+    dataset_version: str
+
+    started_at: datetime
+    completed_at: datetime
+
+    passed: bool
+    total_cases: int
+    passed_cases: int
+    failed_cases: int
+    pass_rate: float
+    aggregate_score: float
+
+    metric_scores: dict[str, float] = Field(default_factory=dict)
+    evaluator_versions: dict[str, str] = Field(default_factory=dict)
+
+    total_latency_ms: int = 0
+    total_tokens: int = 0
+    total_cost_usd: float = 0.0
+
+    application_versions: list[str] = Field(default_factory=list)
+    prompt_versions: list[str] = Field(default_factory=list)
+    models: list[str] = Field(default_factory=list)
+
+    cases: list[ExperimentCaseResult] = Field(default_factory=list)
