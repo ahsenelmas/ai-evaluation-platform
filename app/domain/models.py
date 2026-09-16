@@ -116,6 +116,13 @@ class ExperimentCaseResult(BaseModel):
 
     case_id: str
     passed: bool
+
+    input: dict[str, Any] = Field(default_factory=dict)
+
+    expected_output: dict[str, Any] = Field(default_factory=dict)
+
+    case_metadata: dict[str, Any] = Field(default_factory=dict)
+
     execution: ApplicationExecution
     evaluation: CaseEvaluationReport
 

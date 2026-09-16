@@ -81,6 +81,9 @@ class ExperimentRunner:
                 ExperimentCaseResult(
                     case_id=case.id,
                     passed=case_passed,
+                    input=case.input,
+                    expected_output=case.expected_output,
+                    case_metadata=case.metadata,
                     execution=execution,
                     evaluation=evaluation,
                 )
