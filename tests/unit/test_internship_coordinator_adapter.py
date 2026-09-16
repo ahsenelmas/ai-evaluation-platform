@@ -12,21 +12,12 @@ def create_case() -> EvaluationCase:
         id="internship-001",
         system="internship-coordinator",
         input={
-            "email_sender": (
-                "student@example.test"
-            ),
-            "email_subject": (
-                "Internship Application"
-            ),
-            "email_body": (
-                "Please review my internship "
-                "application."
-            ),
+            "email_sender": ("student@example.test"),
+            "email_subject": ("Internship Application"),
+            "email_body": ("Please review my internship application."),
             "attachment_paths": [],
         },
-        expected_output={
-            "recommendation": "APPROVE"
-        },
+        expected_output={"recommendation": "APPROVE"},
     )
 
 
@@ -44,32 +35,18 @@ async def test_internship_adapter_returns_execution() -> None:
                 "status": "RECOMMENDATION_READY",
                 "student_name": "Test Student",
                 "student_id": "ATA12345",
-                "student_email": (
-                    "student@example.test"
-                ),
+                "student_email": ("student@example.test"),
                 "company_name": "Test Company",
                 "supervisor_name": "Test Supervisor",
-                "supervisor_email": (
-                    "supervisor@test-company.test"
-                ),
-                "internship_start_date": (
-                    "2026-07-01"
-                ),
-                "internship_end_date": (
-                    "2026-08-15"
-                ),
+                "supervisor_email": ("supervisor@test-company.test"),
+                "internship_start_date": ("2026-07-01"),
+                "internship_end_date": ("2026-08-15"),
                 "missing_fields": [],
                 "rule_violations": [],
                 "recommendation": "APPROVE",
-                "recommendation_reason": (
-                    "Application is complete."
-                ),
-                "next_action": (
-                    "COORDINATOR_APPROVAL"
-                ),
-                "audit_log": [
-                    "Application processed"
-                ],
+                "recommendation_reason": ("Application is complete."),
+                "next_action": ("COORDINATOR_APPROVAL"),
+                "audit_log": ["Application processed"],
                 "application_version": "1.0.0",
             },
         )
@@ -79,21 +56,11 @@ async def test_internship_adapter_returns_execution() -> None:
         transport=httpx.MockTransport(handler),
     )
 
-    execution = await adapter.execute(
-        create_case()
-    )
+    execution = await adapter.execute(create_case())
 
     assert execution.success is True
-    assert (
-        execution.output["recommendation"]
-        == "APPROVE"
-    )
-    assert (
-        execution.output["extracted_fields"][
-            "student_name"
-        ]
-        == "Test Student"
-    )
+    assert execution.output["recommendation"] == "APPROVE"
+    assert execution.output["extracted_fields"]["student_name"] == "Test Student"
     assert execution.application_version == "1.0.0"
 
 
@@ -104,9 +71,7 @@ async def test_internship_adapter_handles_http_error() -> None:
     ) -> httpx.Response:
         return httpx.Response(
             status_code=500,
-            json={
-                "detail": "Internal server error"
-            },
+            json={"detail": "Internal server error"},
         )
 
     adapter = InternshipCoordinatorAdapter(
@@ -114,9 +79,7 @@ async def test_internship_adapter_handles_http_error() -> None:
         transport=httpx.MockTransport(handler),
     )
 
-    execution = await adapter.execute(
-        create_case()
-    )
+    execution = await adapter.execute(create_case())
 
     assert execution.success is False
     assert execution.error is not None
@@ -128,11 +91,7 @@ async def test_internship_adapter_validates_input() -> None:
     case = EvaluationCase(
         id="internship-002",
         system="internship-coordinator",
-        input={
-            "email_sender": (
-                "student@example.test"
-            )
-        },
+        input={"email_sender": ("student@example.test")},
         expected_output={},
     )
 

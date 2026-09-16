@@ -37,15 +37,10 @@ class EvaluatorRegistry:
         normalized_name = name.strip().lower()
 
         if not normalized_name:
-            raise ValueError(
-                "Evaluator name cannot be empty."
-            )
+            raise ValueError("Evaluator name cannot be empty.")
 
         if normalized_name in self._factories:
-            raise ValueError(
-                f"Evaluator '{normalized_name}' "
-                "is already registered."
-            )
+            raise ValueError(f"Evaluator '{normalized_name}' is already registered.")
 
         self._factories[normalized_name] = factory
 
@@ -56,18 +51,13 @@ class EvaluatorRegistry:
     ) -> Evaluator:
         normalized_name = name.strip().lower()
 
-        factory = self._factories.get(
-            normalized_name
-        )
+        factory = self._factories.get(normalized_name)
 
         if factory is None:
-            available = ", ".join(
-                self.available()
-            )
+            available = ", ".join(self.available())
 
             raise ValueError(
-                f"Unknown evaluator '{name}'. "
-                f"Available evaluators: {available}"
+                f"Unknown evaluator '{name}'. Available evaluators: {available}"
             )
 
         return factory(settings)
@@ -83,16 +73,14 @@ def create_exact_match_evaluator(
 
     if not isinstance(field_name, str):
         raise ValueError(
-            "The exact_match evaluator requires "
-            "a string 'field_name' setting."
+            "The exact_match evaluator requires a string 'field_name' setting."
         )
 
     field_name = field_name.strip()
 
     if not field_name:
         raise ValueError(
-            "The exact_match evaluator requires "
-            "a non-empty 'field_name' setting."
+            "The exact_match evaluator requires a non-empty 'field_name' setting."
         )
 
     return ExactMatchEvaluator(
@@ -103,23 +91,15 @@ def create_exact_match_evaluator(
 def create_required_fields_evaluator(
     settings: dict[str, Any],
 ) -> Evaluator:
-    required_fields = settings.get(
-        "required_fields"
-    )
+    required_fields = settings.get("required_fields")
 
     if not isinstance(required_fields, list):
         raise ValueError(
-            "The required_fields evaluator requires "
-            "a 'required_fields' list."
+            "The required_fields evaluator requires a 'required_fields' list."
         )
 
-    if not all(
-        isinstance(field, str)
-        for field in required_fields
-    ):
-        raise ValueError(
-            "Every required field must be a string."
-        )
+    if not all(isinstance(field, str) for field in required_fields):
+        raise ValueError("Every required field must be a string.")
 
     return RequiredFieldsEvaluator(
         required_fields=required_fields,
@@ -129,22 +109,17 @@ def create_required_fields_evaluator(
 def create_latency_evaluator(
     settings: dict[str, Any],
 ) -> Evaluator:
-    max_latency_ms = settings.get(
-        "max_latency_ms"
-    )
+    max_latency_ms = settings.get("max_latency_ms")
 
-    if (
-        not isinstance(max_latency_ms, int)
-        or isinstance(max_latency_ms, bool)
-    ):
+    if not isinstance(max_latency_ms, int) or isinstance(max_latency_ms, bool):
         raise ValueError(
-            "The latency evaluator requires an integer "
-            "'max_latency_ms' setting."
+            "The latency evaluator requires an integer 'max_latency_ms' setting."
         )
 
     return LatencyEvaluator(
         max_latency_ms=max_latency_ms,
     )
+
 
 def parse_retrieval_settings(
     settings: dict[str, Any],
@@ -166,15 +141,8 @@ def parse_retrieval_settings(
         "url",
     )
 
-    if (
-        not isinstance(k, int)
-        or isinstance(k, bool)
-        or k <= 0
-    ):
-        raise ValueError(
-            "Retrieval evaluator requires a "
-            "positive integer 'k'."
-        )
+    if not isinstance(k, int) or isinstance(k, bool) or k <= 0:
+        raise ValueError("Retrieval evaluator requires a positive integer 'k'.")
 
     if (
         not isinstance(
@@ -182,23 +150,15 @@ def parse_retrieval_settings(
             (int, float),
         )
         or isinstance(minimum_score, bool)
-        or not 0.0
-        <= float(minimum_score)
-        <= 1.0
+        or not 0.0 <= float(minimum_score) <= 1.0
     ):
-        raise ValueError(
-            "'minimum_score' must be between 0 and 1."
-        )
+        raise ValueError("'minimum_score' must be between 0 and 1.")
 
     if not isinstance(expected_field, str):
-        raise ValueError(
-            "'expected_field' must be a string."
-        )
+        raise ValueError("'expected_field' must be a string.")
 
     if not isinstance(source_id_field, str):
-        raise ValueError(
-            "'source_id_field' must be a string."
-        )
+        raise ValueError("'source_id_field' must be a string.")
 
     return (
         k,
@@ -242,6 +202,7 @@ def create_retrieval_precision_evaluator(
         expected_field=expected_field,
         source_id_field=source_id_field,
     )
+
 
 def build_default_registry() -> EvaluatorRegistry:
     registry = EvaluatorRegistry()

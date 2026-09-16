@@ -7,9 +7,7 @@ from app.adapters.registry import AdapterRegistry
 def test_registry_returns_registered_adapter() -> None:
     registry = AdapterRegistry()
 
-    adapter = AtaRagAdapter(
-        base_url="http://ata-rag.test"
-    )
+    adapter = AtaRagAdapter(base_url="http://ata-rag.test")
 
     registry.register(adapter)
 
@@ -20,31 +18,19 @@ def test_registry_returns_registered_adapter() -> None:
 def test_registry_rejects_duplicate_system() -> None:
     registry = AdapterRegistry()
 
-    registry.register(
-        AtaRagAdapter(
-            base_url="http://ata-rag.test"
-        )
-    )
+    registry.register(AtaRagAdapter(base_url="http://ata-rag.test"))
 
     with pytest.raises(
         ValueError,
         match="already registered",
     ):
-        registry.register(
-            AtaRagAdapter(
-                base_url="http://another.test"
-            )
-        )
+        registry.register(AtaRagAdapter(base_url="http://another.test"))
 
 
 def test_registry_rejects_unknown_system() -> None:
     registry = AdapterRegistry()
 
-    registry.register(
-        AtaRagAdapter(
-            base_url="http://ata-rag.test"
-        )
-    )
+    registry.register(AtaRagAdapter(base_url="http://ata-rag.test"))
 
     with pytest.raises(
         ValueError,

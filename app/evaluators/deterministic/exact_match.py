@@ -43,10 +43,7 @@ class ExactMatchEvaluator(Evaluator):
         passed = actual == expected
 
         if passed:
-            reason = (
-                f"Field '{self.field_name}' exactly matches "
-                "the expected value."
-            )
+            reason = f"Field '{self.field_name}' exactly matches the expected value."
         else:
             reason = (
                 f"Field '{self.field_name}' does not match. "

@@ -47,20 +47,12 @@ class RequiredFieldsEvaluator(Evaluator):
         self,
         required_fields: list[str],
     ) -> None:
-        cleaned_fields = [
-            field.strip()
-            for field in required_fields
-            if field.strip()
-        ]
+        cleaned_fields = [field.strip() for field in required_fields if field.strip()]
 
         if not cleaned_fields:
-            raise ValueError(
-                "At least one required field must be provided."
-            )
+            raise ValueError("At least one required field must be provided.")
 
-        self.required_fields = list(
-            dict.fromkeys(cleaned_fields)
-        )
+        self.required_fields = list(dict.fromkeys(cleaned_fields))
 
     async def evaluate(
         self,
@@ -83,19 +75,14 @@ class RequiredFieldsEvaluator(Evaluator):
             else:
                 present_fields.append(field_path)
 
-        score = len(present_fields) / len(
-            self.required_fields
-        )
+        score = len(present_fields) / len(self.required_fields)
 
         passed = not missing_fields
 
         if passed:
             reason = "All required output fields are present."
         else:
-            reason = (
-                "Missing or empty required fields: "
-                + ", ".join(missing_fields)
-            )
+            reason = "Missing or empty required fields: " + ", ".join(missing_fields)
 
         return EvaluationResult(
             evaluator=self.name,

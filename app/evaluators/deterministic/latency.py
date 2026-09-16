@@ -15,9 +15,7 @@ class LatencyEvaluator(Evaluator):
         max_latency_ms: int,
     ) -> None:
         if max_latency_ms <= 0:
-            raise ValueError(
-                "Maximum latency must be greater than zero."
-            )
+            raise ValueError("Maximum latency must be greater than zero.")
 
         self.max_latency_ms = max_latency_ms
 
@@ -30,10 +28,7 @@ class LatencyEvaluator(Evaluator):
 
         actual_latency_ms = execution.latency_ms
 
-        passed = (
-            actual_latency_ms
-            <= self.max_latency_ms
-        )
+        passed = actual_latency_ms <= self.max_latency_ms
 
         if passed:
             reason = (
@@ -58,8 +53,7 @@ class LatencyEvaluator(Evaluator):
                 "max_latency_ms": self.max_latency_ms,
                 "exceeded_by_ms": max(
                     0,
-                    actual_latency_ms
-                    - self.max_latency_ms,
+                    actual_latency_ms - self.max_latency_ms,
                 ),
             },
         )

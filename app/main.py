@@ -41,6 +41,7 @@ app.include_router(
     prefix=settings.api_prefix,
 )
 
+
 @app.get("/", tags=["root"])
 async def root() -> dict[str, str]:
     return {

@@ -24,19 +24,14 @@ def write_dataset(
 
     dataset_path = root / "test.jsonl"
 
-    content = "\n".join(
-        json.dumps(case)
-        for case in cases
-    )
+    content = "\n".join(json.dumps(case) for case in cases)
 
     dataset_path.write_text(
         content,
         encoding="utf-8",
     )
 
-    actual_checksum = hashlib.sha256(
-        dataset_path.read_bytes()
-    ).hexdigest()
+    actual_checksum = hashlib.sha256(dataset_path.read_bytes()).hexdigest()
 
     manifest = [
         {
@@ -49,11 +44,7 @@ def write_dataset(
             "checksum_sha256": (
                 checksum
                 if checksum is not None
-                else (
-                    actual_checksum
-                    if released
-                    else None
-                )
+                else (actual_checksum if released else None)
             ),
             "case_count": len(cases),
         }
@@ -74,9 +65,7 @@ def create_case(
     return {
         "id": case_id,
         "system": system,
-        "input": {
-            "question": "Test question"
-        },
+        "input": {"question": "Test question"},
         "expected_output": {},
         "metadata": {},
     }
@@ -90,9 +79,7 @@ def test_dataset_service_loads_dataset(
         cases=[create_case()],
     )
 
-    dataset = service.get_dataset(
-        "test-dataset-v1"
-    )
+    dataset = service.get_dataset("test-dataset-v1")
 
     assert dataset.metadata.system == "ata-rag"
     assert len(dataset.cases) == 1
@@ -114,9 +101,7 @@ def test_dataset_service_rejects_duplicate_cases(
         ValueError,
         match="duplicate case IDs",
     ):
-        service.get_dataset(
-            "test-dataset-v1"
-        )
+        service.get_dataset("test-dataset-v1")
 
 
 def test_dataset_service_rejects_wrong_system(
@@ -124,11 +109,7 @@ def test_dataset_service_rejects_wrong_system(
 ) -> None:
     service = write_dataset(
         tmp_path,
-        cases=[
-            create_case(
-                system="internship-coordinator"
-            )
-        ],
+        cases=[create_case(system="internship-coordinator")],
         system="ata-rag",
     )
 
@@ -136,9 +117,7 @@ def test_dataset_service_rejects_wrong_system(
         ValueError,
         match="another system",
     ):
-        service.get_dataset(
-            "test-dataset-v1"
-        )
+        service.get_dataset("test-dataset-v1")
 
 
 def test_released_dataset_detects_changes(
@@ -155,6 +134,4 @@ def test_released_dataset_detects_changes(
         ValueError,
         match="has been modified",
     ):
-        service.get_dataset(
-            "test-dataset-v1"
-        )
+        service.get_dataset("test-dataset-v1")

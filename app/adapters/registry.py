@@ -20,15 +20,10 @@ class AdapterRegistry:
         system = adapter.system.strip().lower()
 
         if not system:
-            raise ValueError(
-                "Adapter system cannot be empty."
-            )
+            raise ValueError("Adapter system cannot be empty.")
 
         if system in self._adapters:
-            raise ValueError(
-                f"Adapter for system '{system}' "
-                "is already registered."
-            )
+            raise ValueError(f"Adapter for system '{system}' is already registered.")
 
         self._adapters[system] = adapter
 
@@ -36,22 +31,15 @@ class AdapterRegistry:
         self,
         system: str,
     ) -> ApplicationAdapter:
-        normalized_system = (
-            system.strip().lower()
-        )
+        normalized_system = system.strip().lower()
 
-        adapter = self._adapters.get(
-            normalized_system
-        )
+        adapter = self._adapters.get(normalized_system)
 
         if adapter is None:
-            available = ", ".join(
-                self.available()
-            )
+            available = ", ".join(self.available())
 
             raise ValueError(
-                f"Unknown AI system '{system}'. "
-                f"Available systems: {available}"
+                f"Unknown AI system '{system}'. Available systems: {available}"
             )
 
         return adapter
@@ -63,30 +51,20 @@ class AdapterRegistry:
 def build_default_adapter_registry(
     settings: Settings | None = None,
 ) -> AdapterRegistry:
-    resolved_settings = (
-        settings or get_settings()
-    )
+    resolved_settings = settings or get_settings()
 
     registry = AdapterRegistry()
 
     registry.register(
         AtaRagAdapter(
-            base_url=(
-                resolved_settings.ata_rag_base_url
-            ),
+            base_url=(resolved_settings.ata_rag_base_url),
         )
     )
 
     registry.register(
         InternshipCoordinatorAdapter(
-            base_url=(
-                resolved_settings
-                .internship_coordinator_base_url
-            ),
-            api_key=(
-                resolved_settings
-                .internship_coordinator_api_key
-            ),
+            base_url=(resolved_settings.internship_coordinator_base_url),
+            api_key=(resolved_settings.internship_coordinator_api_key),
         )
     )
 

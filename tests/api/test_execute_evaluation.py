@@ -27,20 +27,10 @@ class FakeAtaAdapter(ApplicationAdapter):
             case_id=case.id,
             system=self.system,
             output={
-                "answer": (
-                    "ATA offers technical and "
-                    "artistic programmes."
-                ),
+                "answer": ("ATA offers technical and artistic programmes."),
                 "language": "en",
                 "grounded": True,
-                "sources": [
-                    {
-                        "url": (
-                            "https://akademiata.edu.pl/"
-                            "programmes"
-                        )
-                    }
-                ],
+                "sources": [{"url": ("https://akademiata.edu.pl/programmes")}],
             },
             success=True,
             latency_ms=350,
@@ -61,48 +51,25 @@ def create_payload() -> dict:
             "id": "ata-001",
             "system": "ata-rag",
             "input": {
-                "question": (
-                    "What programmes does ATA offer?"
-                ),
-                "language": "en"
+                "question": ("What programmes does ATA offer?"),
+                "language": "en",
             },
-            "expected_output": {
-                "grounded": True
-            },
-            "metadata": {
-                "category": "programmes"
-            }
+            "expected_output": {"grounded": True},
+            "metadata": {"category": "programmes"},
         },
         "evaluators": [
-            {
-                "name": "exact_match",
-                "settings": {
-                    "field_name": "grounded"
-                }
-            },
+            {"name": "exact_match", "settings": {"field_name": "grounded"}},
             {
                 "name": "required_fields",
-                "settings": {
-                    "required_fields": [
-                        "answer",
-                        "sources"
-                    ]
-                }
+                "settings": {"required_fields": ["answer", "sources"]},
             },
-            {
-                "name": "latency",
-                "settings": {
-                    "max_latency_ms": 1000
-                }
-            }
-        ]
+            {"name": "latency", "settings": {"max_latency_ms": 1000}},
+        ],
     }
 
 
 def test_execute_endpoint_runs_full_flow() -> None:
-    app.dependency_overrides[
-        get_adapter_registry
-    ] = override_adapter_registry
+    app.dependency_overrides[get_adapter_registry] = override_adapter_registry
 
     try:
         response = client.post(
@@ -118,20 +85,12 @@ def test_execute_endpoint_runs_full_flow() -> None:
 
     assert data["execution"]["success"] is True
     assert data["evaluation"]["passed"] is True
-    assert (
-        data["evaluation"]["aggregate_score"]
-        == 1.0
-    )
-    assert (
-        data["evaluation"]["evaluator_count"]
-        == 3
-    )
+    assert data["evaluation"]["aggregate_score"] == 1.0
+    assert data["evaluation"]["evaluator_count"] == 3
 
 
 def test_execute_endpoint_rejects_unknown_system() -> None:
-    app.dependency_overrides[
-        get_adapter_registry
-    ] = override_adapter_registry
+    app.dependency_overrides[get_adapter_registry] = override_adapter_registry
 
     payload = create_payload()
     payload["case"]["system"] = "unknown-system"
@@ -145,6 +104,4 @@ def test_execute_endpoint_rejects_unknown_system() -> None:
         app.dependency_overrides.clear()
 
     assert response.status_code == 422
-    assert "Unknown AI system" in (
-        response.json()["detail"]
-    )
+    assert "Unknown AI system" in (response.json()["detail"])

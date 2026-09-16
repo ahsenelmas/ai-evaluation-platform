@@ -56,9 +56,7 @@ async def run_evaluation(
     payload: RunEvaluationRequest,
 ) -> CaseEvaluationReport:
     try:
-        evaluators = create_evaluators(
-            payload.evaluators
-        )
+        evaluators = create_evaluators(payload.evaluators)
 
         runner = EvaluationRunner(
             evaluators=evaluators,
@@ -71,9 +69,7 @@ async def run_evaluation(
 
     except ValueError as error:
         raise HTTPException(
-            status_code=(
-                status.HTTP_422_UNPROCESSABLE_CONTENT
-            ),
+            status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
             detail=str(error),
         ) from error
 
@@ -90,17 +86,11 @@ async def execute_and_evaluate(
     ],
 ) -> ExecuteEvaluationResponse:
     try:
-        adapter = adapter_registry.get(
-            payload.case.system
-        )
+        adapter = adapter_registry.get(payload.case.system)
 
-        execution = await adapter.execute(
-            payload.case
-        )
+        execution = await adapter.execute(payload.case)
 
-        evaluators = create_evaluators(
-            payload.evaluators
-        )
+        evaluators = create_evaluators(payload.evaluators)
 
         runner = EvaluationRunner(
             evaluators=evaluators,
@@ -118,8 +108,6 @@ async def execute_and_evaluate(
 
     except ValueError as error:
         raise HTTPException(
-            status_code=(
-                status.HTTP_422_UNPROCESSABLE_CONTENT
-            ),
+            status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
             detail=str(error),
         ) from error

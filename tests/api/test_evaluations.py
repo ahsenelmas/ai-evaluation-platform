@@ -12,33 +12,18 @@ def create_payload(
         "case": {
             "id": "internship-001",
             "system": "internship-coordinator",
-            "input": {
-                "documents": [
-                    "application.pdf"
-                ]
-            },
-            "expected_output": {
-                "recommendation": "APPROVE"
-            },
-            "metadata": {
-                "category": "valid-application"
-            }
+            "input": {"documents": ["application.pdf"]},
+            "expected_output": {"recommendation": "APPROVE"},
+            "metadata": {"category": "valid-application"},
         },
         "execution": {
             "case_id": "internship-001",
             "system": "internship-coordinator",
-            "output": {
-                "recommendation": actual_recommendation
-            }
+            "output": {"recommendation": actual_recommendation},
         },
         "evaluators": [
-            {
-                "name": "exact_match",
-                "settings": {
-                    "field_name": "recommendation"
-                }
-            }
-        ]
+            {"name": "exact_match", "settings": {"field_name": "recommendation"}}
+        ],
     }
 
 
@@ -61,9 +46,7 @@ def test_run_evaluation_returns_failure() -> None:
     response = client.post(
         "/api/v1/evaluations/run",
         json=create_payload(
-            actual_recommendation=(
-                "REQUEST_CLARIFICATION"
-            ),
+            actual_recommendation=("REQUEST_CLARIFICATION"),
         ),
     )
 
@@ -79,9 +62,7 @@ def test_run_evaluation_returns_failure() -> None:
 def test_unknown_evaluator_returns_422() -> None:
     payload = create_payload()
 
-    payload["evaluators"][0]["name"] = (
-        "unknown_evaluator"
-    )
+    payload["evaluators"][0]["name"] = "unknown_evaluator"
 
     response = client.post(
         "/api/v1/evaluations/run",

@@ -20,9 +20,7 @@ def create_case() -> EvaluationCase:
 
 @pytest.mark.asyncio
 async def test_latency_passes_under_limit() -> None:
-    evaluator = LatencyEvaluator(
-        max_latency_ms=1000
-    )
+    evaluator = LatencyEvaluator(max_latency_ms=1000)
 
     execution = ApplicationExecution(
         case_id="case-001",
@@ -42,9 +40,7 @@ async def test_latency_passes_under_limit() -> None:
 
 @pytest.mark.asyncio
 async def test_latency_fails_over_limit() -> None:
-    evaluator = LatencyEvaluator(
-        max_latency_ms=1000
-    )
+    evaluator = LatencyEvaluator(max_latency_ms=1000)
 
     execution = ApplicationExecution(
         case_id="case-001",
@@ -68,6 +64,4 @@ def test_latency_rejects_invalid_limit() -> None:
         ValueError,
         match="greater than zero",
     ):
-        LatencyEvaluator(
-            max_latency_ms=0
-        )
+        LatencyEvaluator(max_latency_ms=0)

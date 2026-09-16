@@ -10,9 +10,7 @@ def create_case() -> EvaluationCase:
         id="ata-001",
         system="ata-rag",
         input={
-            "question": (
-                "What programmes does ATA offer?"
-            ),
+            "question": ("What programmes does ATA offer?"),
             "language": "en",
             "retrieval_limit": 5,
         },
@@ -30,28 +28,16 @@ async def test_ata_adapter_returns_execution() -> None:
         return httpx.Response(
             status_code=200,
             json={
-                "message_id": (
-                    "58d8efbf-81fc-44fe-"
-                    "aa2f-2c45ddcb63cb"
-                ),
-                "session_id": (
-                    "839fe284-888f-432f-"
-                    "8318-93ee6f4db194"
-                ),
-                "answer": (
-                    "ATA offers several technical "
-                    "and artistic programmes."
-                ),
+                "message_id": ("58d8efbf-81fc-44fe-aa2f-2c45ddcb63cb"),
+                "session_id": ("839fe284-888f-432f-8318-93ee6f4db194"),
+                "answer": ("ATA offers several technical and artistic programmes."),
                 "language": "en",
                 "grounded": True,
                 "sources": [
                     {
                         "title": "Study Programmes",
                         "section": "Programmes",
-                        "url": (
-                            "https://akademiata.edu.pl/"
-                            "programmes"
-                        ),
+                        "url": ("https://akademiata.edu.pl/programmes"),
                         "similarity": 0.85,
                         "final_score": 0.91,
                     }
@@ -73,9 +59,7 @@ async def test_ata_adapter_returns_execution() -> None:
         transport=httpx.MockTransport(handler),
     )
 
-    execution = await adapter.execute(
-        create_case()
-    )
+    execution = await adapter.execute(create_case())
 
     assert execution.success is True
     assert execution.output["grounded"] is True
@@ -91,9 +75,7 @@ async def test_ata_adapter_handles_http_error() -> None:
     ) -> httpx.Response:
         return httpx.Response(
             status_code=503,
-            json={
-                "detail": "Service unavailable"
-            },
+            json={"detail": "Service unavailable"},
         )
 
     adapter = AtaRagAdapter(
@@ -101,9 +83,7 @@ async def test_ata_adapter_handles_http_error() -> None:
         transport=httpx.MockTransport(handler),
     )
 
-    execution = await adapter.execute(
-        create_case()
-    )
+    execution = await adapter.execute(create_case())
 
     assert execution.success is False
     assert execution.error is not None

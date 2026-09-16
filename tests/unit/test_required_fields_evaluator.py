@@ -32,9 +32,7 @@ async def test_required_fields_passes() -> None:
         system="test-system",
         output={
             "recommendation": "APPROVE",
-            "extracted_fields": {
-                "student_name": "Test Student"
-            },
+            "extracted_fields": {"student_name": "Test Student"},
         },
     )
 
@@ -73,9 +71,7 @@ async def test_required_fields_detects_missing_field() -> None:
 
     assert result.passed is False
     assert result.score == 0.5
-    assert result.metadata["missing_fields"] == [
-        "extracted_fields.student_name"
-    ]
+    assert result.metadata["missing_fields"] == ["extracted_fields.student_name"]
 
 
 def test_required_fields_rejects_empty_configuration() -> None:
@@ -83,6 +79,4 @@ def test_required_fields_rejects_empty_configuration() -> None:
         ValueError,
         match="At least one required field",
     ):
-        RequiredFieldsEvaluator(
-            required_fields=[]
-        )
+        RequiredFieldsEvaluator(required_fields=[])

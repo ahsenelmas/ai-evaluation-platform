@@ -10,9 +10,7 @@ from app.domain.models import (
 )
 
 
-class InternshipCoordinatorAdapter(
-    ApplicationAdapter
-):
+class InternshipCoordinatorAdapter(ApplicationAdapter):
     system = "internship-coordinator"
 
     def __init__(
@@ -33,9 +31,7 @@ class InternshipCoordinatorAdapter(
     ) -> ApplicationExecution:
         self.validate_case(case)
 
-        validation_error = self._validate_input(
-            case.input
-        )
+        validation_error = self._validate_input(case.input)
 
         if validation_error:
             return self._failed_execution(
@@ -44,15 +40,9 @@ class InternshipCoordinatorAdapter(
             )
 
         payload = {
-            "email_sender": case.input[
-                "email_sender"
-            ],
-            "email_subject": case.input[
-                "email_subject"
-            ],
-            "email_body": case.input[
-                "email_body"
-            ],
+            "email_sender": case.input["email_sender"],
+            "email_subject": case.input["email_subject"],
+            "email_body": case.input["email_body"],
             "attachment_paths": case.input.get(
                 "attachment_paths",
                 [],
@@ -81,45 +71,22 @@ class InternshipCoordinatorAdapter(
                 response.raise_for_status()
                 data = response.json()
 
-            latency_ms = int(
-                (
-                    time.perf_counter()
-                    - started_at
-                )
-                * 1000
-            )
+            latency_ms = int((time.perf_counter() - started_at) * 1000)
 
             if not isinstance(data, dict):
                 raise ValueError(
-                    "Internship Coordinator returned "
-                    "a non-object response."
+                    "Internship Coordinator returned a non-object response."
                 )
 
             extracted_fields = {
-                "student_name": data.get(
-                    "student_name"
-                ),
-                "student_id": data.get(
-                    "student_id"
-                ),
-                "student_email": data.get(
-                    "student_email"
-                ),
-                "company_name": data.get(
-                    "company_name"
-                ),
-                "supervisor_name": data.get(
-                    "supervisor_name"
-                ),
-                "supervisor_email": data.get(
-                    "supervisor_email"
-                ),
-                "internship_start_date": data.get(
-                    "internship_start_date"
-                ),
-                "internship_end_date": data.get(
-                    "internship_end_date"
-                ),
+                "student_name": data.get("student_name"),
+                "student_id": data.get("student_id"),
+                "student_email": data.get("student_email"),
+                "company_name": data.get("company_name"),
+                "supervisor_name": data.get("supervisor_name"),
+                "supervisor_email": data.get("supervisor_email"),
+                "internship_start_date": data.get("internship_start_date"),
+                "internship_end_date": data.get("internship_end_date"),
             }
 
             return ApplicationExecution(
@@ -128,9 +95,7 @@ class InternshipCoordinatorAdapter(
                 output={
                     "case_id": data.get("case_id"),
                     "status": data.get("status"),
-                    "extracted_fields": (
-                        extracted_fields
-                    ),
+                    "extracted_fields": (extracted_fields),
                     "missing_fields": data.get(
                         "missing_fields",
                         [],
@@ -139,15 +104,9 @@ class InternshipCoordinatorAdapter(
                         "rule_violations",
                         [],
                     ),
-                    "recommendation": data.get(
-                        "recommendation"
-                    ),
-                    "recommendation_reason": data.get(
-                        "recommendation_reason"
-                    ),
-                    "next_action": data.get(
-                        "next_action"
-                    ),
+                    "recommendation": data.get("recommendation"),
+                    "recommendation_reason": data.get("recommendation_reason"),
+                    "next_action": data.get("next_action"),
                     "audit_log": data.get(
                         "audit_log",
                         [],
@@ -156,28 +115,16 @@ class InternshipCoordinatorAdapter(
                 success=True,
                 latency_ms=latency_ms,
                 model=data.get("model"),
-                prompt_version=data.get(
-                    "prompt_version"
-                ),
-                application_version=data.get(
-                    "application_version"
-                ),
+                prompt_version=data.get("prompt_version"),
+                application_version=data.get("application_version"),
                 metadata={
-                    "adapter": (
-                        "InternshipCoordinatorAdapter"
-                    ),
+                    "adapter": ("InternshipCoordinatorAdapter"),
                     "endpoint": "/cases/intake",
                 },
             )
 
         except httpx.HTTPStatusError as error:
-            latency_ms = int(
-                (
-                    time.perf_counter()
-                    - started_at
-                )
-                * 1000
-            )
+            latency_ms = int((time.perf_counter() - started_at) * 1000)
 
             return self._failed_execution(
                 case=case,
@@ -193,13 +140,7 @@ class InternshipCoordinatorAdapter(
             ValueError,
             TypeError,
         ) as error:
-            latency_ms = int(
-                (
-                    time.perf_counter()
-                    - started_at
-                )
-                * 1000
-            )
+            latency_ms = int((time.perf_counter() - started_at) * 1000)
 
             return self._failed_execution(
                 case=case,
@@ -227,10 +168,8 @@ class InternshipCoordinatorAdapter(
         ]
 
         if invalid_fields:
-            return (
-                "Internship evaluation case requires "
-                "string fields: "
-                + ", ".join(invalid_fields)
+            return "Internship evaluation case requires string fields: " + ", ".join(
+                invalid_fields
             )
 
         attachment_paths = case_input.get(
@@ -239,17 +178,10 @@ class InternshipCoordinatorAdapter(
         )
 
         if not isinstance(attachment_paths, list):
-            return (
-                "'attachment_paths' must be a list."
-            )
+            return "'attachment_paths' must be a list."
 
-        if not all(
-            isinstance(path, str)
-            for path in attachment_paths
-        ):
-            return (
-                "Every attachment path must be a string."
-            )
+        if not all(isinstance(path, str) for path in attachment_paths):
+            return "Every attachment path must be a string."
 
         return None
 
@@ -267,9 +199,7 @@ class InternshipCoordinatorAdapter(
             error=error,
             latency_ms=latency_ms,
             metadata={
-                "adapter": (
-                    "InternshipCoordinatorAdapter"
-                ),
+                "adapter": ("InternshipCoordinatorAdapter"),
                 "endpoint": "/cases/intake",
             },
         )

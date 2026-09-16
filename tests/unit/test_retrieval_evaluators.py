@@ -14,9 +14,7 @@ def create_case() -> EvaluationCase:
     return EvaluationCase(
         id="ata-001",
         system="ata-rag",
-        input={
-            "question": "What programmes are offered?"
-        },
+        input={"question": "What programmes are offered?"},
         expected_output={
             "expected_source_ids": [
                 "https://ata.test/programmes",
@@ -32,15 +30,9 @@ def create_execution() -> ApplicationExecution:
         system="ata-rag",
         output={},
         retrieved_context=[
-            {
-                "url": "https://ata.test/programmes"
-            },
-            {
-                "url": "https://ata.test/tuition"
-            },
-            {
-                "url": "https://ata.test/admissions"
-            },
+            {"url": "https://ata.test/programmes"},
+            {"url": "https://ata.test/tuition"},
+            {"url": "https://ata.test/admissions"},
         ],
     )
 
@@ -76,9 +68,7 @@ async def test_recall_at_k_detects_missing_source() -> None:
 
     assert result.passed is False
     assert result.score == 0.5
-    assert result.metadata["missing_ids"] == [
-        "https://ata.test/admissions"
-    ]
+    assert result.metadata["missing_ids"] == ["https://ata.test/admissions"]
 
 
 @pytest.mark.asyncio
@@ -95,9 +85,7 @@ async def test_precision_at_k_calculates_score() -> None:
 
     assert result.passed is True
     assert result.score == 0.6667
-    assert result.metadata["irrelevant_ids"] == [
-        "https://ata.test/tuition"
-    ]
+    assert result.metadata["irrelevant_ids"] == ["https://ata.test/tuition"]
 
 
 @pytest.mark.asyncio
@@ -106,11 +94,7 @@ async def test_precision_fails_when_no_source_is_relevant() -> None:
         case_id="ata-001",
         system="ata-rag",
         output={},
-        retrieved_context=[
-            {
-                "url": "https://ata.test/unrelated"
-            }
-        ],
+        retrieved_context=[{"url": "https://ata.test/unrelated"}],
     )
 
     evaluator = RetrievalPrecisionEvaluator(

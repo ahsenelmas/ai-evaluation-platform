@@ -14,20 +14,14 @@ class RetrievalEvaluator(Evaluator):
         *,
         k: int = 5,
         minimum_score: float = 0.0,
-        expected_field: str = (
-            "expected_source_ids"
-        ),
+        expected_field: str = ("expected_source_ids"),
         source_id_field: str = "url",
     ) -> None:
         if k <= 0:
-            raise ValueError(
-                "Retrieval K must be greater than zero."
-            )
+            raise ValueError("Retrieval K must be greater than zero.")
 
         if not 0.0 <= minimum_score <= 1.0:
-            raise ValueError(
-                "Minimum score must be between 0 and 1."
-            )
+            raise ValueError("Minimum score must be between 0 and 1.")
 
         self.k = k
         self.minimum_score = minimum_score
@@ -44,25 +38,12 @@ class RetrievalEvaluator(Evaluator):
         )
 
         if not isinstance(raw_ids, list):
-            raise ValueError(
-                f"'{self.expected_field}' must be a list."
-            )
+            raise ValueError(f"'{self.expected_field}' must be a list.")
 
-        if not all(
-            isinstance(item, str)
-            for item in raw_ids
-        ):
-            raise ValueError(
-                "Every expected source ID must be a string."
-            )
+        if not all(isinstance(item, str) for item in raw_ids):
+            raise ValueError("Every expected source ID must be a string.")
 
-        return list(
-            dict.fromkeys(
-                item.strip()
-                for item in raw_ids
-                if item.strip()
-            )
-        )
+        return list(dict.fromkeys(item.strip() for item in raw_ids if item.strip()))
 
     def get_retrieved_ids(
         self,
@@ -74,27 +55,20 @@ class RetrievalEvaluator(Evaluator):
             if not isinstance(source, dict):
                 continue
 
-            source_id: Any = source.get(
-                self.source_id_field
-            )
+            source_id: Any = source.get(self.source_id_field)
 
             if not isinstance(source_id, str):
                 continue
 
             source_id = source_id.strip()
 
-            if (
-                source_id
-                and source_id not in retrieved_ids
-            ):
+            if source_id and source_id not in retrieved_ids:
                 retrieved_ids.append(source_id)
 
         return retrieved_ids[: self.k]
 
 
-class RetrievalRecallEvaluator(
-    RetrievalEvaluator
-):
+class RetrievalRecallEvaluator(RetrievalEvaluator):
     name = "retrieval_recall"
     version = "1.0.0"
 
@@ -104,13 +78,9 @@ class RetrievalRecallEvaluator(
         execution: ApplicationExecution,
     ) -> EvaluationResult:
         try:
-            expected_ids = self.get_expected_ids(
-                case
-            )
+            expected_ids = self.get_expected_ids(case)
 
-            retrieved_ids = self.get_retrieved_ids(
-                execution
-            )
+            retrieved_ids = self.get_retrieved_ids(execution)
 
         except ValueError as error:
             return EvaluationResult(
@@ -128,19 +98,11 @@ class RetrievalRecallEvaluator(
         expected_set = set(expected_ids)
         retrieved_set = set(retrieved_ids)
 
-        matched_ids = sorted(
-            expected_set & retrieved_set
-        )
+        matched_ids = sorted(expected_set & retrieved_set)
 
-        missing_ids = sorted(
-            expected_set - retrieved_set
-        )
+        missing_ids = sorted(expected_set - retrieved_set)
 
-        score = (
-            len(matched_ids) / len(expected_set)
-            if expected_set
-            else 1.0
-        )
+        score = len(matched_ids) / len(expected_set) if expected_set else 1.0
 
         passed = score >= self.minimum_score
 
@@ -166,9 +128,7 @@ class RetrievalRecallEvaluator(
         )
 
 
-class RetrievalPrecisionEvaluator(
-    RetrievalEvaluator
-):
+class RetrievalPrecisionEvaluator(RetrievalEvaluator):
     name = "retrieval_precision"
     version = "1.0.0"
 
@@ -178,13 +138,9 @@ class RetrievalPrecisionEvaluator(
         execution: ApplicationExecution,
     ) -> EvaluationResult:
         try:
-            expected_ids = self.get_expected_ids(
-                case
-            )
+            expected_ids = self.get_expected_ids(case)
 
-            retrieved_ids = self.get_retrieved_ids(
-                execution
-            )
+            retrieved_ids = self.get_retrieved_ids(execution)
 
         except ValueError as error:
             return EvaluationResult(
@@ -202,25 +158,14 @@ class RetrievalPrecisionEvaluator(
         expected_set = set(expected_ids)
         retrieved_set = set(retrieved_ids)
 
-        matched_ids = sorted(
-            expected_set & retrieved_set
-        )
+        matched_ids = sorted(expected_set & retrieved_set)
 
-        irrelevant_ids = sorted(
-            retrieved_set - expected_set
-        )
+        irrelevant_ids = sorted(retrieved_set - expected_set)
 
         if retrieved_ids:
-            score = (
-                len(matched_ids)
-                / len(retrieved_ids)
-            )
+            score = len(matched_ids) / len(retrieved_ids)
         else:
-            score = (
-                1.0
-                if not expected_ids
-                else 0.0
-            )
+            score = 1.0 if not expected_ids else 0.0
 
         passed = score >= self.minimum_score
 

@@ -15,9 +15,7 @@ class EvaluationRunner:
         evaluators: Sequence[Evaluator],
     ) -> None:
         if not evaluators:
-            raise ValueError(
-                "At least one evaluator is required."
-            )
+            raise ValueError("At least one evaluator is required.")
 
         self.evaluators = list(evaluators)
 
@@ -27,9 +25,7 @@ class EvaluationRunner:
         execution: ApplicationExecution,
     ) -> CaseEvaluationReport:
         if case.id != execution.case_id:
-            raise ValueError(
-                "Evaluation case ID and execution case ID do not match."
-            )
+            raise ValueError("Evaluation case ID and execution case ID do not match.")
 
         if case.system != execution.system:
             raise ValueError(
@@ -50,10 +46,7 @@ class EvaluationRunner:
                     evaluator_version=evaluator.version,
                     score=0.0,
                     passed=False,
-                    reason=(
-                        f"Evaluator failed with "
-                        f"{type(error).__name__}: {error}"
-                    ),
+                    reason=(f"Evaluator failed with {type(error).__name__}: {error}"),
                     metadata={
                         "evaluator_error": True,
                         "error_type": type(error).__name__,
@@ -63,22 +56,14 @@ class EvaluationRunner:
             results.append(result)
 
         numerical_scores = [
-            result.score
-            for result in results
-            if result.score is not None
+            result.score for result in results if result.score is not None
         ]
 
         aggregate_score = (
-            sum(numerical_scores) / len(numerical_scores)
-            if numerical_scores
-            else 0.0
+            sum(numerical_scores) / len(numerical_scores) if numerical_scores else 0.0
         )
 
-        passed_count = sum(
-            1
-            for result in results
-            if result.passed
-        )
+        passed_count = sum(1 for result in results if result.passed)
 
         failed_count = len(results) - passed_count
 

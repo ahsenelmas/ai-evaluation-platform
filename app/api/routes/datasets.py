@@ -26,9 +26,7 @@ router = APIRouter(
 def get_dataset_service() -> DatasetService:
     settings = get_settings()
 
-    return DatasetService(
-        dataset_root=settings.dataset_root
-    )
+    return DatasetService(dataset_root=settings.dataset_root)
 
 
 @router.get(
@@ -46,9 +44,7 @@ def list_datasets(
 
     except ValueError as error:
         raise HTTPException(
-            status_code=(
-                status.HTTP_422_UNPROCESSABLE_CONTENT
-            ),
+            status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
             detail=str(error),
         ) from error
 
@@ -65,9 +61,7 @@ def get_dataset(
     ],
 ) -> EvaluationDataset:
     try:
-        return service.get_dataset(
-            dataset_id
-        )
+        return service.get_dataset(dataset_id)
 
     except DatasetNotFoundError as error:
         raise HTTPException(
@@ -77,8 +71,6 @@ def get_dataset(
 
     except ValueError as error:
         raise HTTPException(
-            status_code=(
-                status.HTTP_422_UNPROCESSABLE_CONTENT
-            ),
+            status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
             detail=str(error),
         ) from error
