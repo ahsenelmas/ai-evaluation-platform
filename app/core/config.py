@@ -11,6 +11,8 @@ class Settings(BaseSettings):
 
     api_prefix: str = "/api/v1"
 
+    dataset_root: str = "datasets"
+
     database_url: str | None = None
 
     langfuse_public_key: str | None = None

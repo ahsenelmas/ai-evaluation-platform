@@ -12,6 +12,9 @@ from app.domain.models import (
 )
 
 
+class DatasetNotFoundError(ValueError):
+    """Raised when a requested dataset does not exist."""
+
 class DatasetService:
     def __init__(
         self,
@@ -46,7 +49,7 @@ class DatasetService:
         )
 
         if entry is None:
-            raise ValueError(
+            raise DatasetNotFoundError(
                 f"Dataset '{dataset_id}' was not found."
             )
 
