@@ -25,6 +25,9 @@ from app.domain.models import ExperimentReport
 from app.engine.experiment_runner import (
     ExperimentRunner,
 )
+from app.integrations.langfuse_client import (
+    LangfuseExperimentPublisher,
+)
 from app.repositories.experiment_repository import (
     ExperimentNotFoundError,
     FileExperimentRepository,
@@ -32,9 +35,6 @@ from app.repositories.experiment_repository import (
 from app.services.dataset_service import (
     DatasetNotFoundError,
     DatasetService,
-)
-from app.integrations.langfuse_client import (
-    LangfuseExperimentPublisher,
 )
 
 router = APIRouter(
@@ -49,12 +49,10 @@ def get_experiment_repository() -> FileExperimentRepository:
 
     return FileExperimentRepository(storage_root=(settings.experiment_storage_root))
 
+
 @lru_cache
-def get_langfuse_publisher(
-) -> LangfuseExperimentPublisher:
-    return LangfuseExperimentPublisher.from_settings(
-        get_settings()
-    )
+def get_langfuse_publisher() -> LangfuseExperimentPublisher:
+    return LangfuseExperimentPublisher.from_settings(get_settings())
 
 
 @router.get(
