@@ -112,7 +112,7 @@ def create_dataset(
 async def test_experiment_aggregates_results():
     runner = ExperimentRunner(
         adapter=FakeAdapter(),
-        evaluators=[ExpectedAnswerEvaluator()],
+        evaluators=[ExpectedAnswerEvaluator()],  # type: ignore
     )
 
     report = await runner.run(
@@ -145,7 +145,7 @@ async def test_experiment_aggregates_results():
 async def test_experiment_captures_execution_failure():
     runner = ExperimentRunner(
         adapter=FakeAdapter(),
-        evaluators=[ExpectedAnswerEvaluator()],
+        evaluators=[ExpectedAnswerEvaluator()],  # type: ignore
     )
 
     report = await runner.run(
@@ -166,14 +166,14 @@ async def test_experiment_captures_execution_failure():
 
     assert failed_case.passed is False
     assert failed_case.execution.success is False
-    assert "RuntimeError" in failed_case.execution.error
+    assert "RuntimeError" in failed_case.execution.error  # type: ignore
 
 
 @pytest.mark.asyncio
 async def test_experiment_rejects_wrong_adapter():
     runner = ExperimentRunner(
         adapter=FakeAdapter(system="another-system"),
-        evaluators=[ExpectedAnswerEvaluator()],
+        evaluators=[ExpectedAnswerEvaluator()],  # type: ignore
     )
 
     with pytest.raises(
