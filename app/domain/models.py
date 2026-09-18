@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -159,3 +159,73 @@ class ExperimentReport(BaseModel):
     models: list[str] = Field(default_factory=list)
 
     cases: list[ExperimentCaseResult] = Field(default_factory=list)
+
+class MetricComparison(BaseModel):
+    """Comparison of one metric between two experiments."""
+
+    metric: str
+
+    baseline_score: float | None = None
+    candidate_score: float | None = None
+
+    absolute_change: float | None = None
+    relative_change_percent: float | None = None
+
+    status: Literal[
+        "improved",
+        "unchanged",
+        "regressed",
+        "added",
+        "missing",
+    ]
+
+    regression: bool = False
+
+
+class ExperimentComparison(BaseModel):
+    """Regression comparison between baseline and candidate experiments."""
+
+    baseline_experiment_id: str
+    candidate_experiment_id: str
+
+    system: str
+    dataset_id: str
+
+    baseline_dataset_version: str
+    candidate_dataset_version: str
+
+    baseline_passed: bool
+    candidate_passed: bool
+
+    baseline_pass_rate: float
+    candidate_pass_rate: float
+    pass_rate_change: float
+
+    baseline_aggregate_score: float
+    candidate_aggregate_score: float
+    aggregate_score_change: float
+
+    baseline_average_latency_ms: float
+    candidate_average_latency_ms: float
+    latency_change_percent: float | None = None
+
+    score_tolerance: float
+    max_latency_increase_percent: float
+
+    metrics: list[MetricComparison] = Field(
+        default_factory=list,
+    )
+
+    regressed_metrics: list[str] = Field(
+        default_factory=list,
+    )
+
+    improved_metrics: list[str] = Field(
+        default_factory=list,
+    )
+
+    regression_reasons: list[str] = Field(
+        default_factory=list,
+    )
+
+    regression_detected: bool

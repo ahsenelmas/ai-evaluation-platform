@@ -6,6 +6,7 @@ from fastapi import (
     BackgroundTasks,
     Depends,
     HTTPException,
+    Query,
     status,
 )
 
@@ -21,7 +22,10 @@ from app.api.schemas.experiments import (
     RunExperimentRequest,
 )
 from app.core.config import get_settings
-from app.domain.models import ExperimentReport
+from app.domain.models import (
+    ExperimentComparison,
+    ExperimentReport,
+)
 from app.engine.experiment_runner import (
     ExperimentRunner,
 )
@@ -35,6 +39,9 @@ from app.repositories.experiment_repository import (
 from app.services.dataset_service import (
     DatasetNotFoundError,
     DatasetService,
+)
+from app.services.experiment_comparison_service import (
+    ExperimentComparisonService,
 )
 
 router = APIRouter(
@@ -74,6 +81,59 @@ def list_experiments(
             detail=str(error),
         ) from error
 
+@router.get(
+    "/compare",
+    response_model=ExperimentComparison,
+)
+def compare_experiments(
+    baseline_id: str,
+    candidate_id: str,
+    repository: Annotated[
+        FileExperimentRepository,
+        Depends(get_experiment_repository),
+    ],
+    score_tolerance: Annotated[
+        float,
+        Query(
+            ge=0.0,
+            le=1.0,
+        ),
+    ] = 0.0,
+    max_latency_increase_percent: Annotated[
+        float,
+        Query(ge=0.0),
+    ] = 20.0,
+) -> ExperimentComparison:
+    try:
+        baseline = repository.get(baseline_id)
+        candidate = repository.get(candidate_id)
+
+        comparison_service = (
+            ExperimentComparisonService()
+        )
+
+        return comparison_service.compare(
+            baseline=baseline,
+            candidate=candidate,
+            score_tolerance=score_tolerance,
+            max_latency_increase_percent=(
+                max_latency_increase_percent
+            ),
+        )
+
+    except ExperimentNotFoundError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=(
+                status.HTTP_422_UNPROCESSABLE_CONTENT
+            ),
+            detail=str(error),
+        ) from error
 
 @router.get(
     "/{experiment_id}",
