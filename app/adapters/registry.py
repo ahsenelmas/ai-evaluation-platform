@@ -63,8 +63,16 @@ def build_default_adapter_registry(
 
     registry.register(
         InternshipCoordinatorAdapter(
-            base_url=(resolved_settings.internship_coordinator_base_url),
-            api_key=(resolved_settings.internship_coordinator_api_key),
+            base_url=(
+                resolved_settings.internship_coordinator_base_url
+            ),
+            api_key=(
+                resolved_settings.internship_coordinator_api_key
+            ),
+            attachment_root=(
+                resolved_settings
+                .internship_coordinator_attachment_root
+            ),
         )
     )
 

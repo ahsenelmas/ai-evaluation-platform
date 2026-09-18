@@ -8,5 +8,15 @@
         "released": false,
         "checksum_sha256": null,
         "case_count": 3
+    },
+    {
+        "id": "internship-coordinator-golden-v1",
+        "system": "internship-coordinator",
+        "version": "1.0.0",
+        "file_path": "internship/internship-coordinator-golden-v1.jsonl",
+        "description": "Balanced golden dataset covering seven Internship Coordinator application categories.",
+        "released": false,
+        "checksum_sha256": null,
+        "case_count": 14
     }
 ]

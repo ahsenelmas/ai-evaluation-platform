@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     ata_rag_base_url: str = "http://127.0.0.1:8001"
     internship_coordinator_base_url: str = "http://127.0.0.1:8002"
     internship_coordinator_api_key: str | None = None
+    internship_coordinator_attachment_root: str | None = None
 
     experiment_storage_root: str = "data/experiments"
 
