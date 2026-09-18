@@ -2,9 +2,9 @@
     {
         "id": "ata-rag-golden-v1",
         "system": "ata-rag",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "file_path": "ata_rag/ata-rag-golden-v1.jsonl",
-        "description": "Initial ATA RAG golden evaluation dataset.",
+        "description": "ATA RAG golden evaluation dataset with canonical source URLs.",
         "released": false,
         "checksum_sha256": null,
         "case_count": 3
