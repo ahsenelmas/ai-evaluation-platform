@@ -51,3 +51,27 @@ def test_api_error_includes_server_detail() -> None:
     )
     with pytest.raises(APIError, match="Unknown evaluator"):
         api.run({"name": "invalid"})
+
+
+def test_human_reviews_use_case_route_and_json_body() -> None:
+    calls: list[str] = []
+    payload = {
+        "reviewer": "Ahsen",
+        "score": 1.0,
+        "passed": True,
+        "category": "correct",
+        "explanation": "Matches expected decision.",
+    }
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/api/v1/experiments/exp-1/cases/case-1/reviews"
+        calls.append(request.method)
+        if request.method == "POST":
+            assert json.loads(request.read()) == payload
+            return httpx.Response(201, json={"review_id": "review-1"})
+        return httpx.Response(200, json=[{"review_id": "review-1"}])
+
+    api = EvaluationAPI("http://127.0.0.1:8100", transport=httpx.MockTransport(respond))
+    assert api.add_human_review("exp-1", "case-1", payload)["review_id"] == "review-1"
+    assert api.human_reviews("exp-1", "case-1")[0]["review_id"] == "review-1"
+    assert calls == ["POST", "GET"]

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
@@ -125,6 +125,20 @@ class ExperimentCaseResult(BaseModel):
 
     execution: ApplicationExecution
     evaluation: CaseEvaluationReport
+
+
+class HumanReview(BaseModel):
+    """A reviewer judgment about one saved application execution."""
+
+    review_id: str
+    experiment_id: str
+    case_id: str
+    reviewer: str = Field(min_length=1)
+    score: float = Field(ge=0.0, le=1.0)
+    passed: bool
+    category: str = Field(min_length=1)
+    explanation: str = Field(min_length=1)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class ExperimentReport(BaseModel):

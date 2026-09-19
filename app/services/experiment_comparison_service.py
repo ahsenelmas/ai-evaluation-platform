@@ -263,6 +263,13 @@ class ExperimentComparisonService:
                 f"'{candidate.dataset_id}'."
             )
 
+        if baseline.dataset_version != candidate.dataset_version:
+            raise IncompatibleExperimentsError(
+                "Experiments use different dataset versions: "
+                f"'{baseline.dataset_version}' and "
+                f"'{candidate.dataset_version}'."
+            )
+
     @staticmethod
     def _validate_thresholds(
         score_tolerance: float,

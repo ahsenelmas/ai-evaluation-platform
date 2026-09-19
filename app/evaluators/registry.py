@@ -6,6 +6,10 @@ from app.evaluators.base import Evaluator
 from app.evaluators.deterministic.exact_match import (
     ExactMatchEvaluator,
 )
+from app.evaluators.deterministic.internship_fields import (
+    MissingFieldsMatchEvaluator,
+    SecurityFlagMatchEvaluator,
+)
 from app.evaluators.deterministic.latency import (
     LatencyEvaluator,
 )
@@ -100,6 +104,22 @@ def create_exact_match_evaluator(
     return ExactMatchEvaluator(
         field_name=field_name,
     )
+
+
+def create_security_flag_match_evaluator(
+    settings: dict[str, Any],
+) -> Evaluator:
+    if settings:
+        raise ValueError("The security_flag_match evaluator does not accept settings.")
+    return SecurityFlagMatchEvaluator()
+
+
+def create_missing_fields_match_evaluator(
+    settings: dict[str, Any],
+) -> Evaluator:
+    if settings:
+        raise ValueError("The missing_fields_match evaluator does not accept settings.")
+    return MissingFieldsMatchEvaluator()
 
 
 def create_required_fields_evaluator(
@@ -419,6 +439,16 @@ def build_default_registry() -> EvaluatorRegistry:
     registry.register(
         "semantic_facts",
         create_semantic_facts_evaluator,
+    )
+
+    registry.register(
+        "security_flag_match",
+        create_security_flag_match_evaluator,
+    )
+
+    registry.register(
+        "missing_fields_match",
+        create_missing_fields_match_evaluator,
     )
 
     return registry

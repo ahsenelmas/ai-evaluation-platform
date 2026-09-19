@@ -21,6 +21,7 @@ def create_report(
     *,
     system: str = "ata-rag",
     dataset_id: str = "ata-rag-golden-v1",
+    dataset_version: str = "1.1.0",
     passed: bool = True,
     pass_rate: float = 1.0,
     aggregate_score: float = 1.0,
@@ -41,7 +42,7 @@ def create_report(
         name=experiment_id,
         system=system,
         dataset_id=dataset_id,
-        dataset_version="1.1.0",
+        dataset_version=dataset_version,
         started_at=timestamp,
         completed_at=timestamp,
         passed=passed,
@@ -191,3 +192,25 @@ def test_compare_endpoint_rejects_different_systems(
 
     assert response.status_code == 422
     assert "different systems" in response.json()["detail"]
+
+
+def test_compare_endpoint_rejects_different_dataset_versions(
+    comparison_repository: FileExperimentRepository,
+):
+    comparison_repository.save(
+        create_report("exp-baseline", dataset_version="1.0.0")
+    )
+    comparison_repository.save(
+        create_report("exp-candidate", dataset_version="1.1.0")
+    )
+
+    response = client.get(
+        "/api/v1/experiments/compare",
+        params={
+            "baseline_id": "exp-baseline",
+            "candidate_id": "exp-candidate",
+        },
+    )
+
+    assert response.status_code == 422
+    assert "different dataset versions" in response.json()["detail"]

@@ -69,7 +69,7 @@ def metrics(report: dict[str, Any]) -> None:
     columns[3].metric("Total latency", f"{report.get('total_latency_ms', 0):,} ms")
 
 
-def report_details(report: dict[str, Any]) -> None:
+def report_details(report: dict[str, Any], api: EvaluationAPI | None = None) -> None:
     st.subheader(report.get("name", "Experiment"))
     st.caption(
         f"{report['experiment_id']} · {report.get('system', '—')} · "
@@ -127,6 +127,8 @@ def report_details(report: dict[str, Any]) -> None:
                     hide_index=True,
                     use_container_width=True,
                 )
+                st.write("**Case input**")
+                st.json(case.get("input", {}))
                 expected, actual = st.columns(2)
                 expected.write("**Expected output**")
                 expected.json(case.get("expected_output", {}))
@@ -137,6 +139,60 @@ def report_details(report: dict[str, Any]) -> None:
                         "execution": execution,
                         "evaluation": case.get("evaluation", {}),
                     })
+                if api is not None:
+                    human_review_form(api, report["experiment_id"], case)
+
+
+def human_review_form(
+    api: EvaluationAPI, experiment_id: str, case: dict[str, Any]
+) -> None:
+    case_id = case["case_id"]
+    st.markdown("**Human reviews**")
+    reviews = load(api.human_reviews, experiment_id, case_id)
+    if reviews:
+        st.dataframe(
+            [
+                {
+                    "Reviewer": review["reviewer"],
+                    "Score": review["score"],
+                    "Passed": review["passed"],
+                    "Category": review["category"],
+                    "Explanation": review["explanation"],
+                    "Reviewed": format_date(review.get("created_at")),
+                }
+                for review in reviews
+            ],
+            hide_index=True,
+            use_container_width=True,
+        )
+    with st.form(f"review_{experiment_id}_{case_id}"):
+        reviewer = st.text_input("Reviewer name")
+        category = st.selectbox(
+            "Human judgment",
+            ["correct", "partially_correct", "incorrect", "uncertain"],
+        )
+        score = st.slider("Human score", 0.0, 1.0, 0.5, 0.05)
+        passed = st.checkbox("Human pass decision")
+        explanation = st.text_area("Reason for this judgment")
+        submitted = st.form_submit_button("Save human review")
+        if submitted:
+            if not reviewer.strip() or not explanation.strip():
+                st.error("Enter a reviewer name and an explanation.")
+            else:
+                saved = load(
+                    api.add_human_review,
+                    experiment_id,
+                    case_id,
+                    {
+                        "reviewer": reviewer.strip(),
+                        "score": score,
+                        "passed": passed,
+                        "category": category,
+                        "explanation": explanation.strip(),
+                    },
+                )
+                if saved:
+                    st.success("Human review saved. Refresh to see it above.")
 
 
 def default_evaluators(system: str) -> list[dict[str, Any]]:
@@ -172,6 +228,8 @@ def default_evaluators(system: str) -> list[dict[str, Any]]:
             },
         },
         {"name": "latency", "settings": {"max_latency_ms": 60000}},
+        {"name": "security_flag_match", "settings": {}},
+        {"name": "missing_fields_match", "settings": {}},
     ]
 
 
@@ -283,7 +341,7 @@ def run_page(api: EvaluationAPI) -> None:
             )
         if report:
             st.success(f"Saved experiment {report['experiment_id']}")
-            report_details(report)
+            report_details(report, api)
 
 
 def history_page(api: EvaluationAPI) -> None:
@@ -298,7 +356,7 @@ def history_page(api: EvaluationAPI) -> None:
     selected = st.selectbox("Experiment", reports, format_func=label)
     report = load(api.experiment, selected["experiment_id"])
     if report:
-        report_details(report)
+        report_details(report, api)
 
 
 def compare_page(api: EvaluationAPI) -> None:

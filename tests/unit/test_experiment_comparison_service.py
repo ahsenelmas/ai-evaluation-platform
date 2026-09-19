@@ -14,6 +14,7 @@ def create_report(
     *,
     system: str = "ata-rag",
     dataset_id: str = "ata-rag-golden-v1",
+    dataset_version: str = "1.1.0",
     passed: bool = True,
     pass_rate: float = 1.0,
     aggregate_score: float = 1.0,
@@ -35,7 +36,7 @@ def create_report(
         name=experiment_id,
         system=system,
         dataset_id=dataset_id,
-        dataset_version="1.1.0",
+        dataset_version=dataset_version,
         started_at=timestamp,
         completed_at=timestamp,
         passed=passed,
@@ -197,3 +198,15 @@ def test_comparison_rejects_different_systems():
             baseline=baseline,
             candidate=candidate,
         )
+
+
+def test_comparison_rejects_different_dataset_versions():
+    service = ExperimentComparisonService()
+    baseline = create_report("exp-baseline", dataset_version="1.0.0")
+    candidate = create_report("exp-candidate", dataset_version="1.1.0")
+
+    with pytest.raises(
+        IncompatibleExperimentsError,
+        match="different dataset versions",
+    ):
+        service.compare(baseline=baseline, candidate=candidate)

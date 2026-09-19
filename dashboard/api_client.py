@@ -66,6 +66,20 @@ class EvaluationAPI:
     def experiment(self, experiment_id: str) -> dict[str, Any]:
         return self._request("GET", f"/api/v1/experiments/{experiment_id}")
 
+    def human_reviews(self, experiment_id: str, case_id: str) -> list[dict[str, Any]]:
+        return self._request(
+            "GET", f"/api/v1/experiments/{experiment_id}/cases/{case_id}/reviews"
+        )
+
+    def add_human_review(
+        self, experiment_id: str, case_id: str, payload: dict[str, Any]
+    ) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            f"/api/v1/experiments/{experiment_id}/cases/{case_id}/reviews",
+            payload=payload,
+        )
+
     def run(self, payload: dict[str, Any]) -> dict[str, Any]:
         return self._request("POST", "/api/v1/experiments/run", payload=payload)
 
