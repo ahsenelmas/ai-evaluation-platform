@@ -435,7 +435,7 @@ def main() -> None:
             ["Overview", "Datasets", "Run experiment", "History", "Compare"],
         )
         st.caption("Use Refresh in your browser to load recent runs.")
-    api = EvaluationAPI(base_url, timeout=300.0)
+    api = EvaluationAPI(base_url, timeout=3600.0)
     pages = {
         "Overview": overview,
         "Datasets": datasets_page,

@@ -1,22 +1,42 @@
 [
-    {
-        "id": "ata-rag-golden-v1",
-        "system": "ata-rag",
-        "version": "1.1.0",
-        "file_path": "ata_rag/ata-rag-golden-v1.jsonl",
-        "description": "ATA RAG golden evaluation dataset with canonical source URLs.",
-        "released": false,
-        "checksum_sha256": null,
-        "case_count": 3
-    },
-    {
-        "id": "internship-coordinator-golden-v1",
-        "system": "internship-coordinator",
-        "version": "1.1.0",
-        "file_path": "internship/internship-coordinator-golden-v1.jsonl",
-        "description": "Balanced golden dataset covering seven Internship Coordinator application categories.",
-        "released": false,
-        "checksum_sha256": null,
-        "case_count": 14
-    }
+  {
+    "id": "ata-rag-golden-v1",
+    "system": "ata-rag",
+    "version": "1.1.0",
+    "file_path": "ata_rag/ata-rag-golden-v1.jsonl",
+    "description": "ATA RAG golden evaluation dataset with canonical source URLs.",
+    "released": false,
+    "checksum_sha256": null,
+    "case_count": 3
+  },
+  {
+    "id": "internship-coordinator-golden-v1",
+    "system": "internship-coordinator",
+    "version": "1.1.0",
+    "file_path": "internship/internship-coordinator-golden-v1.jsonl",
+    "description": "Balanced golden dataset covering seven Internship Coordinator application categories.",
+    "released": false,
+    "checksum_sha256": null,
+    "case_count": 14
+  },
+  {
+    "id": "internship-coordinator-candidate-v2",
+    "system": "internship-coordinator",
+    "version": "0.1.0",
+    "file_path": "internship/internship-coordinator-candidate-v2.jsonl",
+    "description": "50-case candidate dataset pending label review.",
+    "released": false,
+    "checksum_sha256": null,
+    "case_count": 50
+  },
+  {
+    "id": "ata-rag-candidate-100-v1",
+    "system": "ata-rag",
+    "version": "0.1.0",
+    "file_path": "ata_rag/ata-rag-candidate-100-v1.jsonl",
+    "description": "100 prompt variants from 20 ATA-RAG seed cases; review pending.",
+    "released": false,
+    "checksum_sha256": null,
+    "case_count": 100
+  }
 ]
