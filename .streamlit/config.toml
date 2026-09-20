@@ -7,3 +7,7 @@ textColor = "#18342d"
 
 [server]
 headless = true
+
+[client]
+# Hides the "Deploy" button; this dashboard runs locally.
+toolbarMode = "minimal"
