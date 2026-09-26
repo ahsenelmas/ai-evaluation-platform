@@ -20,15 +20,15 @@ The five-metric runs revealed that invalid and blank PDF cases were labeled with
 
 The ATA-RAG semantic judge marked all three facts as matched after provider credentials were fixed. Judge scores depend on provider and model; three cases do not establish agreement with human reviewers. Application token/cost totals in a report exclude judge token usage stored in `semantic_facts` result metadata.
 
-## Requirements still open
+## Requirements tracking
 
 | Requirement | Current state | Next work |
 | --- | --- | --- |
-| At least 100 ATA-RAG and 50 Internship cases | 3 and 14 | Curate cases, review labels, version and release datasets with checksums |
+| At least 100 ATA-RAG and 50 Internship cases | 100-case and 50-case candidate datasets are present; independent label review and release remain open | Curate labels, version and release datasets with checksums |
 | Human reviews tied to cases and Langfuse traces | Case review UI/API and separate JSON records implemented; no trace linkage | Collect human reviews and publish linked scores |
 | Validate LLM judge against humans | No judge versus human comparison | Collect independent reviews and measure agreement by category |
 | At least five evaluators per system | Both dashboard presets have five; the five-metric Internship run passed 14/14 after two labels were corrected | Review labels independently on a larger set |
 | Langfuse dataset/experiment workflow | Observations and scores published when configured; no dataset synchronization | Upload datasets, link traces to dataset items, verify in Langfuse |
-| CI regression gate with demonstrated failure | Local tests and comparison API exist; no checked-in CI gate | Run offline tests in CI and demonstrate a deliberate regression with its trace |
+| CI regression gate with demonstrated failure | Implemented with GitHub Actions, deterministic reports, exit codes, tests, and a manual deliberate-failure mode | Capture the successful and deliberate-failure workflow runs for submission evidence |
 
 Version the corrected Internship dataset, then collect human reviews and expand the reviewed datasets. A perfect score on 14 cases does not establish performance outside those cases.
