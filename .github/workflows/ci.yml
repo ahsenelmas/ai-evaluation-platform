@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      demonstrate_regression:
+        description: "Run the deliberately regressed candidate (expected failure)"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Ruff and pytest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[ui,dev]"
+
+      - name: Lint
+        run: python -m ruff check .
+
+      - name: Test
+        run: python -m pytest -q
+
+  regression-gate:
+    name: AI regression gate
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
+      - name: Check healthy candidate
+        if: ${{ !inputs.demonstrate_regression }}
+        run: |
+          python scripts/check_regression.py \
+            --baseline tests/fixtures/regression/baseline.json \
+            --candidate tests/fixtures/regression/candidate.json
+
+      - name: Demonstrate regression detection
+        if: ${{ inputs.demonstrate_regression }}
+        run: |
+          python scripts/check_regression.py \
+            --baseline tests/fixtures/regression/baseline.json \
+            --candidate tests/fixtures/regression/regressed_candidate.json
+
+  delivery:
+    name: Package release candidate
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs: [quality, regression-gate]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Build Python packages
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+
+      - name: Upload release candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-evaluation-platform-${{ github.sha }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14

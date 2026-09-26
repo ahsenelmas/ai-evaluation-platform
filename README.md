@@ -1,5 +1,7 @@
 # AI Evaluation Platform
 
+[![CI](https://github.com/ahsenelmas/ai-evaluation-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/ahsenelmas/ai-evaluation-platform/actions/workflows/ci.yml)
+
 An MVP for repeatable, case level evaluations of ATA-RAG and an Internship Coordinator. Versioned datasets, evaluator settings, outputs, and scores stay together so you can investigate failures and compare runs.
 
 The platform uses a FastAPI evaluation API, Streamlit dashboard, local JSON report storage, and optional Langfuse tracing. Each evaluated application runs as its own service.
@@ -115,7 +117,9 @@ python -m pytest -q
 git diff --check
 ```
 
-This is a local evaluation MVP, not a hosted product. Experiments execute synchronously and save reports when complete, so a long run can outlast the dashboard client timeout. Candidate datasets need independent label review, more diverse ATA-RAG questions, and human assessment of factual responses. CI regression gating, released dataset checksums, and a measured judge versus human agreement study remain future work.
+GitHub Actions runs Ruff, pytest, and an offline AI regression gate on pushes and pull requests to `main`. The gate compares deterministic experiment-report fixtures and fails when quality metrics fall or latency exceeds its limit. A successful push to `main` also builds a downloadable wheel and source-distribution release candidate. See the [CI/CD guide](docs/ci-cd.md) for local commands and the deliberate-failure demonstration.
+
+This is a local evaluation MVP, not a hosted product. Experiments execute synchronously and save reports when complete, so a long run can outlast the dashboard client timeout. Candidate datasets need independent label review, more diverse ATA-RAG questions, and human assessment of factual responses. Released dataset checksums and a measured judge versus human agreement study remain future work.
 
 ## Repository layout
 
@@ -127,5 +131,6 @@ This is a local evaluation MVP, not a hosted product. Experiments execute synchr
 | `app/api/` | FastAPI routes and schemas. |
 | `dashboard/` | Streamlit interface and API client. |
 | `datasets/` | Manifest and JSONL cases. |
-| `scripts/` | Dataset building scripts. |
-| `tests/` | API, unit and integration tests. |
+| `scripts/` | Dataset builders and the CI regression gate. |
+| `tests/` | API, unit and integration tests plus deterministic CI fixtures. |
+| `.github/workflows/` | GitHub Actions quality and regression workflow. |
